@@ -9,3 +9,5 @@
 .agent>a{margin-left:auto;color:var(--orange);font-size:12px;white-space:nowrap}
 
 td small.operation-hint{font-size:12px;line-height:1.6}
+
+.report-summary{padding:18px 20px;margin:18px 0}.report-summary p{margin:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}

@@ -1,33 +1,38 @@
+import json
 from fastapi.testclient import TestClient
-from kernel_dashboard.app import app
-
-def test_api_and_static():
-    # Do not run application lifespan: GPU recovery is tested independently.
-    c=TestClient(app)
-    assert c.get('/').status_code==200
-    assert c.get('/example.json').json()['schema_version']==1
-    assert c.get('/api/agent-tasks').status_code==200
-    assert c.post('/api/agent-tasks',json={'prompt':'do work'}).status_code==405
-    assert '/api/agent-tasks/{ident}/cancel' not in app.openapi()['paths']
-    assert c.get('/api/health').json()['execution']=='external_agent'
-    assert c.get('/api/guide').status_code==200
-    assert c.get('/api/runners').json()[0]['id']=='tiny_decoder'
-    assert c.get('/api/runs/nonexistent').status_code==404
-    assert c.post('/api/runs',json={'batch':0}).status_code==422
-    assert c.post('/api/runs',json={'gpu':'H100'}).status_code==422
-    assert c.post('/api/runs',json={'runner':'unregistered'}).status_code==409
-    assert c.post('/api/runs',json={},headers={'origin':'https://untrusted.example'}).status_code==403
+import kernel_dashboard.app as service
+from kernel_dashboard.reports import ReportStore
 
 
-def test_legacy_result_api_adds_phase_points(tmp_path,monkeypatch):
-    import json
-    import kernel_dashboard.app as module
+def isolated(tmp_path, monkeypatch):
+    monkeypatch.setattr(service, 'store', ReportStore(tmp_path))
+    return TestClient(service.app)
+
+
+def test_api_is_result_store_only(tmp_path,monkeypatch):
+    client=isolated(tmp_path,monkeypatch)
+    with client:
+        assert client.get('/').status_code==200
+        assert client.get('/api/health').json()['mode']=='result_store'
+        assert client.get('/api/guide').status_code==200
+        assert client.get('/api/runs').json()==[]
+        assert client.post('/api/runs',json={'runner':'tiny_decoder'}).status_code==422
+        assert client.post('/api/runs',json={},headers={'origin':'https://untrusted.example'}).status_code==403
+        schema=client.get('/openapi.json').json()['paths']
+        assert '/api/runners' not in schema
+        assert '/api/runs/{ident}/cancel' not in schema
+        assert '/api/agent-tasks' in schema and 'post' not in schema['/api/agent-tasks']
+
+
+def test_legacy_results_remain_readable(tmp_path,monkeypatch):
     source=json.load(open('kernel_dashboard/static/example.json'))
-    source.pop('phase_points'); source.pop('phase_point_reasons')
-    work=tmp_path/'legacy';work.mkdir();(work/'result.json').write_text(json.dumps(source))
-    monkeypatch.setattr(module,'DATA',tmp_path)
-    monkeypatch.setattr(module,'record',lambda ident:{'id':ident})
-    response=TestClient(app).get('/api/runs/legacy/result').json()
-    assert response['point']==source['point']
-    assert response['phase_points']['prefill'] is not None
-    assert response['phase_points']['decode'] is not None
+    source.pop('phase_points');source.pop('phase_point_reasons')
+    directory=tmp_path/'legacy';directory.mkdir()
+    (directory/'result.json').write_text(json.dumps(source))
+    (directory/'job.json').write_text(json.dumps({'id':'legacy','created_at':1,'status':'completed','config':source['config']}))
+    client=isolated(tmp_path,monkeypatch)
+    response=client.get('/api/runs/legacy/result').json()
+    assert response['point']==source['point'] and response['phase_points']['decode']
+    assert len(client.get('/api/runs').json())==1
+    (directory/'job.json').unlink()
+    assert client.get('/api/runs').json()==[]

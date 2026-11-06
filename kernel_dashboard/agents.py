@@ -1,9 +1,9 @@
 """Read-only access to records from the former embedded Codex worker.
 
-New work is driven by an external coding agent through the profiling API.
+New work is driven by an external coding agent that runs remote commands and uploads results.
 """
 import json
-from .jobs import DATA
+from .paths import DATA
 
 
 class AgentHistory:

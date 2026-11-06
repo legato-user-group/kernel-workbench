@@ -9,11 +9,13 @@ function fail(e){$('#status').textContent=e.message}
 function metric(label,value,detail,bar){return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="metric-detail">${detail}</div>${bar==null?'':`<div class="bar"><span style="width:${bar}%"></span></div>`}</div>`}
 function render(){
  $('#model-name').textContent=data.model.name;
+ $('#report-summary-text').textContent=data.agent_summary||'';
+ $('#report-summary').hidden=!data.agent_summary;
  const t=data.timings,p=data.point;
  const independent=t.source==='unprofiled';
  const timingLabel=independent?`프로파일러 OFF · 중앙값 ${t.sample_count}회`:(t.source==='runner_single'?'단일 실행 · 반복 기준 측정 없음':'Nsight 수집 중 · 독립 기준 측정 없음');
  const profileTime=key=>t.profiled?`<br>${t.profiled.source==='nsys'?'Nsight 수집':'수집 실행'}: ${time(t.profiled[key])}`:'';
- $('#metrics').innerHTML=metric('END-TO-END',`${num(t.total_ms)} <small>ms</small>`,`${timingLabel}${profileTime('total_ms')}`)+metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,`${data.config.input_tokens} input tokens${profileTime('prefill')}`,t.total_ms?t.prefill/t.total_ms*100:0)+metric('DECODE',`${num(t.decode)} <small>ms</small>`,`${Math.max(0,data.config.output_tokens-1)} autoregressive steps${profileTime('decode')}`,t.total_ms?t.decode/t.total_ms*100:0)+metric('COUNTER COVERAGE',`${data.coverage.measured}<small> / ${data.coverage.total} kernels</small>`,`${data.hardware.name} · ${data.config.dtype.toUpperCase()}`);
+ $('#metrics').innerHTML=metric('END-TO-END',`${num(t.total_ms)} <small>ms</small>`,`${timingLabel}${profileTime('total_ms')}`)+metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,`${data.config.input_tokens} input tokens${profileTime('prefill')}`,t.total_ms?t.prefill/t.total_ms*100:0)+metric('DECODE',`${num(t.decode)} <small>ms</small>`,`${Math.max(0,data.config.output_tokens-1)} autoregressive steps${profileTime('decode')}`,t.total_ms?t.decode/t.total_ms*100:0)+metric('COUNTER COVERAGE',`${data.coverage.measured}<small> / ${data.coverage.total} kernels</small>`,`${esc(data.hardware.name)} · ${esc(data.config.dtype.toUpperCase())}`);
  $('#notice').textContent=runId==='example'?'화면 검증용 예제 데이터입니다. 실제 GPU 측정 결과가 아닙니다.':p?.source==='estimated'?'GPU 카운터가 불완전합니다. 전체 점은 모델 연산·논리적 텐서 트래픽 추정치이며 실제 DRAM 측정값과 다릅니다.':'';
  function node(n){return n.children?`<details class="node" open><summary>${esc(n.label)}</summary>${n.children.map(node).join('')}</details>`:`<div class="node"><button data-module="${esc(n.id)}" class="${moduleId===n.id?'selected':''}">◇ ${esc(n.label)}</button></div>`}
  $('#tree').innerHTML=data.model.children.map(node).join('');
@@ -23,7 +25,7 @@ function render(){
  $('#step').innerHTML='<option value="all">모든 decode 단계</option>'+[...new Set(data.kernels.map(k=>k.step).filter(k=>k!=null))].map(s=>`<option value="${s}">Decode ${s}</option>`).join('');
  $('#diagnostics').textContent=JSON.stringify({config:data.config,coverage:data.coverage,versions:data.versions,timings:data.timings,warnings:data.warnings,hardware:data.hardware},null,2);
  $('#estimates').innerHTML='<div class="table-wrap"><table><thead><tr><th>모델 연산</th><th>단계</th><th>FLOPs (추정)</th><th>논리적 bytes (추정)</th><th>모델 하한 (추정)</th></tr></thead><tbody>'+data.estimates.map(o=>`<tr><td>${esc(o.module)}</td><td>${esc(o.phase)}</td><td>${quantity(Object.values(o.flops).reduce((a,b)=>a+b,0))}</td><td>${quantity(o.bytes)}</td><td>${time(o.lower_ms)}</td></tr>`).join('')+'</tbody></table></div>';
- $('#downloads').innerHTML=runId==='example'?'':['result.json','artifacts.tar.gz','commands.log'].map(n=>`<a href="/api/runs/${runId}/artifacts/${n}">${n} ↓</a>`).join('');
+ $('#downloads').innerHTML=runId==='example'?'':(data.artifacts||['result.json','artifacts.tar.gz','commands.log']).map(n=>`<a href="/api/runs/${runId}/artifacts/${n}">${n} ↓</a>`).join('');
 }
 function roofline(){
  const labels={all:'전체 실행',prefill:'Prefill',decode:'Decode'};
@@ -46,7 +48,8 @@ function roofline(){
  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${phase==='all'?'전체·prefill·decode 비교':labels[phase]} roofline. 가로축 연산 집약도, 세로축 TFLOP/s. 구간별 수치는 그래프 아래 표시됩니다.">`;
  for(let i=xmin;i<=xmax;i++)s+=`<line x1="${x(10**i)}" y1="${T}" x2="${x(10**i)}" y2="${H-B}" stroke="#2b343b"/><text x="${x(10**i)}" y="${H-B+20}" text-anchor="middle">10<tspan baseline-shift="super" font-size="8">${i}</tspan></text>`;
  for(let i=ymin;i<=ymax;i++)s+=`<line x1="${L}" y1="${y(10**i)}" x2="${W-R}" y2="${y(10**i)}" stroke="#2b343b"/><text x="${L-12}" y="${y(10**i)+4}" text-anchor="end">10<tspan baseline-shift="super" font-size="8">${i}</tspan></text>`;
- const roofs=[['BF16 / FP16 Tensor',312,'#8dd5b2'],['TF32 Tensor',156,'#88bceb'],['FP32',19.5,'#b9a0d8']];
+ const roofs=[['BF16 Tensor',hw.peaks?.bf16_tensor/1e12,'#8dd5b2'],['FP16 Tensor',hw.peaks?.fp16_tensor/1e12,'#8dd5b2'],['TF32 Tensor',hw.peaks?.tf32_tensor/1e12,'#88bceb'],['FP32',hw.peaks?.fp32/1e12,'#b9a0d8']].filter((r,i,rows)=>r[1]>0&&(i!==1||r[1]!==rows[0][1]));
+ if(hw.peaks?.bf16_tensor>0&&hw.peaks.bf16_tensor===hw.peaks.fp16_tensor)roofs[0][0]='BF16 / FP16 Tensor';
  roofs.forEach(([name,peak,color],i)=>{const ridge=peak*1e12/hw.bandwidth;const xa=10**xmin;s+=`<path d="M${x(xa)},${y(xa*hw.bandwidth/1e12)} L${x(ridge)},${y(peak)} L${W-R},${y(peak)}" fill="none" stroke="${color}" stroke-width="1.8"/><text x="${W-R-5}" y="${y(peak)-(i===1?-14:7)}" text-anchor="end" style="fill:${color};font-size:10px">${name} · ${peak} T</text>`});
  s+=`<text x="${L+15}" y="${T+18}">HBM ${num(hw.bandwidth/1e12,3)} TB/s</text>`;
  const offsets={all:5,prefill:-15,decode:24};

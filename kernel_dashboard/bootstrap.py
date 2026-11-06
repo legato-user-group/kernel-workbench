@@ -1,6 +1,7 @@
-"""Colab-side orchestration. Always produces a downloadable bundle on profiler failures."""
+"""GPU-host collection, independent of SSH, Colab or other command transports."""
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -9,26 +10,30 @@ from pathlib import Path
 
 root=Path(sys.argv[1]); os.chdir(root)
 status={'warnings':[]}
-def call(args, output=None):
-    proc=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
-    if output: Path(output).write_text(proc.stdout)
+def call(args, output=None, stream=True):
+    print('+ '+shlex.join(args),flush=True)
+    lines=[]
+    with subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1) as process:
+        with (Path(output).open('w') if output else open(os.devnull,'w')) as log:
+            for line in process.stdout:
+                lines.append(line)
+                log.write(line); log.flush()
+                if stream: print(line,end='',flush=True)
+        process.wait()
+    proc=subprocess.CompletedProcess(args,process.returncode,''.join(lines))
+    print(f'Exit {proc.returncode}'+(f'; saved {output}' if output else ''),flush=True)
     if proc.returncode: status['warnings'].append(f'{args[0]} failed ({proc.returncode}): {proc.stdout[-1200:]}')
     return proc
 try:
-    # Resolve existing tool locations before installing anything in the ephemeral VM.
+    # Resolve tools already installed by the agent in the target environment.
     for name, pattern in [('nsys','/opt/nvidia/nsight-systems/*/bin/nsys'),('ncu','/usr/local/cuda*/nsight-compute*/ncu')]:
         if not shutil.which(name):
             import glob
             choices=sorted(glob.glob(pattern))
             if choices: os.environ['PATH']=str(Path(choices[-1]).parent)+':'+os.environ['PATH']
-    if not shutil.which('nsys') or not shutil.which('ncu'):
-        call(['apt-get','update','-qq'],'apt-update.log')
-        # NVIDIA CUDA repository on Colab publishes versioned profiler packages.
-        packages=subprocess.run(['apt-cache','pkgnames'],capture_output=True,text=True).stdout.splitlines()
-        for tool,prefix in [('nsys','nsight-systems-'),('ncu','nsight-compute-')]:
-            options=sorted(p for p in packages if p.startswith(prefix) and p[len(prefix):len(prefix)+1].isdigit())
-            if not shutil.which(tool) and options:
-                call(['apt-get','install','-y',options[-1]],tool+'-install.log')
+    for tool in ('nsys','ncu'):
+        if not shutil.which(tool):
+            status['warnings'].append(f'{tool} unavailable; agent must prepare profiling tools on this GPU host')
     entry=[sys.executable,'remote_entry.py','config.json','runner.py','meta.json']
     status['tools']={tool:call([tool,'--version']).stdout if shutil.which(tool) else 'unavailable' for tool in ('nsys','ncu')}
     if shutil.which('nsys'):
@@ -38,7 +43,7 @@ try:
     if not Path('meta.json').exists():
         call(entry,'runner.log')
     if shutil.which('ncu'):
-        query=call(['ncu','--query-metrics','--query-metrics-mode','base'],'available-metrics.txt').stdout
+        query=call(['ncu','--query-metrics','--query-metrics-mode','base'],'available-metrics.txt',stream=False).stdout
         wanted=['dram__bytes_read.sum','dram__bytes_write.sum']
         for prefix in ('f','d'):
             wanted += [f'smsp__sass_thread_inst_executed_op_{prefix}{op}_pred_on.sum' for op in ('add','mul','fma')]
@@ -51,7 +56,7 @@ try:
                   '--cache-control','none','--clock-control','none','--metrics',','.join(wanted),
                   '--force-overwrite','-o','counters',*entry],'ncu.log')
             if Path('counters.ncu-rep').exists():
-                call(['ncu','--import','counters.ncu-rep','--page','raw','--csv','--print-units','base','--rename-kernels','off'],'counters.csv')
+                call(['ncu','--import','counters.ncu-rep','--page','raw','--csv','--print-units','base','--rename-kernels','off'],'counters.csv',stream=False)
     # All Nsight subprocesses have exited; benchmark with a plain Python process.
     call([sys.executable,'remote_entry.py','config.json','runner.py','baseline.json','--benchmark'],'baseline.log')
     if not Path('meta.json').exists(): raise RuntimeError('Runner did not produce metadata; inspect runner/nsys logs')
@@ -62,3 +67,4 @@ finally:
     with tarfile.open('artifacts.tar.gz','w:gz') as archive:
         for p in sorted(root.iterdir()):
             if p.name != 'artifacts.tar.gz' and p.is_file(): archive.add(p,arcname=p.name)
+    print(json.dumps({'artifacts':str(root/'artifacts.tar.gz'),'status':status}),flush=True)

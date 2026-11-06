@@ -1,9 +1,9 @@
 ---
-name: infer-opt-benchmark
+name: kernel-benchmark
 description: "Measure GPU kernels and model inference using the infer-opt correctness-first workflow: warmed independent latency runs, CUDA Event and wall-time separation, controlled kernel microbenchmarks, and separate profiling. Use for inference baselines, kernel tuning, and performance comparisons; not for ordinary model execution without a measurement task."
 ---
 
-# Infer-opt GPU measurement
+# Kernel benchmark
 
 Separate three questions: is the implementation correct, how fast does the
 unprofiled workload run, and where does a separate profile attribute its work?
