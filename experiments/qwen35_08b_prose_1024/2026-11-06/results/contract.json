@@ -1,0 +1,47 @@
+{
+  "reference": "official HF BF16 cached eager; SDPA; StaticCache; cpu",
+  "candidate": "unchanged HF checkpoint; fp16; MTP disabled; no quantization",
+  "candidate_dtype": "fp16",
+  "engines": [
+    "fp16_plain_cudagraph"
+  ],
+  "check_engines": [
+    "fp16_plain_cudagraph"
+  ],
+  "runner_id": "qwen35_08b_prose_1024",
+  "mtp_enabled": false,
+  "quantization": null,
+  "kernels": "torch",
+  "model_config_file": "results/model_config.json",
+  "lengths": [
+    1024
+  ],
+  "new_tokens": 256,
+  "warmup": 3,
+  "repeats": 10,
+  "hf_timing_requested": false,
+  "cache_capacity": 1344,
+  "gate": {
+    "max_mean_kl": 0.005,
+    "margin_threshold": 0.5,
+    "strong_mismatches_allowed": 0,
+    "allclose_atol": 0.02,
+    "allclose_rtol": 0.02,
+    "allclose_is_diagnostic": true
+  },
+  "teacher_forcing_positions": 256,
+  "state_comparison": "not checked; logits and cache position checked",
+  "timing": "separate unprofiled wall/CUDA Event passes; model load, cache reset and graph capture excluded",
+  "models": {
+    "reference": {
+      "repo": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "path": "/content/kwb-qwen08b/models/checkpoints/Qwen3.5-0.8B/2fc06364715b967f1860aea9cf38778875588b17"
+    },
+    "candidate": {
+      "repo": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "path": "/content/kwb-qwen08b/models/checkpoints/Qwen3.5-0.8B/2fc06364715b967f1860aea9cf38778875588b17"
+    }
+  }
+}
