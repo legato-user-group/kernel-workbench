@@ -1,3 +1,4 @@
+import { moduleLabel } from './kernel-labels.js';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let data, phase='all',moduleId=null,runId='example', active=null,follow=true;
 const num=(v,d=2)=>v==null?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
@@ -9,7 +10,10 @@ function metric(label,value,detail,bar){return `<div class="metric"><div class="
 function render(){
  $('#model-name').textContent=data.model.name;
  const t=data.timings,p=data.point;
- $('#metrics').innerHTML=metric('END-TO-END',`${num(t.total_ms)} <small>ms</small>`,'추론 구간 · 로딩 / 워밍업 제외')+metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,`${data.config.input_tokens} input tokens`,t.total_ms?t.prefill/t.total_ms*100:0)+metric('DECODE',`${num(t.decode)} <small>ms</small>`,`${Math.max(0,data.config.output_tokens-1)} autoregressive steps`,t.total_ms?t.decode/t.total_ms*100:0)+metric('COUNTER COVERAGE',`${data.coverage.measured}<small> / ${data.coverage.total} kernels</small>`,`${data.hardware.name} · ${data.config.dtype.toUpperCase()}`);
+ const independent=t.source==='unprofiled';
+ const timingLabel=independent?`프로파일러 OFF · 중앙값 ${t.sample_count}회`:(t.source==='runner_single'?'단일 실행 · 반복 기준 측정 없음':'Nsight 수집 중 · 독립 기준 측정 없음');
+ const profileTime=key=>t.profiled?`<br>${t.profiled.source==='nsys'?'Nsight 수집':'수집 실행'}: ${time(t.profiled[key])}`:'';
+ $('#metrics').innerHTML=metric('END-TO-END',`${num(t.total_ms)} <small>ms</small>`,`${timingLabel}${profileTime('total_ms')}`)+metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,`${data.config.input_tokens} input tokens${profileTime('prefill')}`,t.total_ms?t.prefill/t.total_ms*100:0)+metric('DECODE',`${num(t.decode)} <small>ms</small>`,`${Math.max(0,data.config.output_tokens-1)} autoregressive steps${profileTime('decode')}`,t.total_ms?t.decode/t.total_ms*100:0)+metric('COUNTER COVERAGE',`${data.coverage.measured}<small> / ${data.coverage.total} kernels</small>`,`${data.hardware.name} · ${data.config.dtype.toUpperCase()}`);
  $('#notice').textContent=runId==='example'?'화면 검증용 예제 데이터입니다. 실제 GPU 측정 결과가 아닙니다.':p?.source==='estimated'?'GPU 카운터가 불완전합니다. 전체 점은 모델 연산·논리적 텐서 트래픽 추정치이며 실제 DRAM 측정값과 다릅니다.':'';
  function node(n){return n.children?`<details class="node" open><summary>${esc(n.label)}</summary>${n.children.map(node).join('')}</details>`:`<div class="node"><button data-module="${esc(n.id)}" class="${moduleId===n.id?'selected':''}">◇ ${esc(n.label)}</button></div>`}
  $('#tree').innerHTML=data.model.children.map(node).join('');
@@ -17,7 +21,7 @@ function render(){
  $('#gpu-name').textContent=data.hardware.name;
  roofline();table();
  $('#step').innerHTML='<option value="all">모든 decode 단계</option>'+[...new Set(data.kernels.map(k=>k.step).filter(k=>k!=null))].map(s=>`<option value="${s}">Decode ${s}</option>`).join('');
- $('#diagnostics').textContent=JSON.stringify({config:data.config,coverage:data.coverage,versions:data.versions,warnings:data.warnings,hardware:data.hardware},null,2);
+ $('#diagnostics').textContent=JSON.stringify({config:data.config,coverage:data.coverage,versions:data.versions,timings:data.timings,warnings:data.warnings,hardware:data.hardware},null,2);
  $('#estimates').innerHTML='<div class="table-wrap"><table><thead><tr><th>모델 연산</th><th>단계</th><th>FLOPs (추정)</th><th>논리적 bytes (추정)</th><th>모델 하한 (추정)</th></tr></thead><tbody>'+data.estimates.map(o=>`<tr><td>${esc(o.module)}</td><td>${esc(o.phase)}</td><td>${quantity(Object.values(o.flops).reduce((a,b)=>a+b,0))}</td><td>${quantity(o.bytes)}</td><td>${time(o.lower_ms)}</td></tr>`).join('')+'</tbody></table></div>';
  $('#downloads').innerHTML=runId==='example'?'':['result.json','artifacts.tar.gz','commands.log'].map(n=>`<a href="/api/runs/${runId}/artifacts/${n}">${n} ↓</a>`).join('');
 }
@@ -29,7 +33,7 @@ function roofline(){
  const visible=keys.filter(key=>points[key]?.intensity>0&&points[key]?.tflops>0);
  const sources=new Set(visible.map(key=>points[key].source));
  $('#point-source').textContent=!visible.length?'INSUFFICIENT DATA':sources.size>1?'MEASURED + ESTIMATED':sources.has('measured')?'MEASURED':'ESTIMATED · MODELED';
- $('#point-scope').innerHTML=visible.map(key=>{const p=points[key];return `<div data-point-summary="${key}"><b style="color:${colors[key]}">${labels[key]} · ${p.source==='measured'?'실측':'추정'}</b><span>${num(p.intensity)} FLOP/byte · ${num(p.tflops,5)} TFLOP/s</span><small>${time(key==='all'?data.timings.total_ms:data.timings[key])} · ${p.source==='estimated'?'논리적 텐서 트래픽 추정':'DRAM 카운터'} · 혼합 연산 경로 집계</small></div>`}).join('');
+ $('#point-scope').innerHTML=visible.map(key=>{const p=points[key];return `<div data-point-summary="${key}"><b style="color:${colors[key]}">${labels[key]} · ${p.source==='measured'?'실측':'추정'}</b><span>${num(p.intensity)} FLOP/byte · ${num(p.tflops,5)} TFLOP/s</span><small>${time(key==='all'?data.timings.total_ms:data.timings[key])} (${data.timings.source==='unprofiled'?'독립 측정':'수집 중 측정'}) · ${p.source==='estimated'?'논리적 텐서 트래픽 추정':'DRAM 카운터'} · 혼합 연산 경로 집계</small></div>`}).join('');
  const messages={not_executed:'출력 1토큰은 prefill에서 생성되므로 실제 decode 호출이 없습니다. 출력 토큰 수를 2 이상으로 수집하세요.',missing_data:'이 실행에는 해당 구간의 커널 또는 비용 추정 데이터가 없습니다.',missing_duration:'해당 구간의 실행 시간을 수집하지 못했습니다.',missing_counters_or_nonpositive_work:'연산량·메모리 트래픽이 부족하거나 0이어서 로그 축 위치를 표시할 수 없습니다.'};
  const missing=keys.filter(key=>key!=='all'&&!points[key]);
  $('#phase-notice').textContent=missing.map(key=>`${labels[key]}: ${messages[data.phase_point_reasons?.[key]]||messages.missing_data}`).join(' ');
@@ -62,21 +66,20 @@ function setPhase(next){
 
 function table(){
  const q=$('#search').value.toLowerCase(),bound=$('#bound').value,step=$('#step').value,groups=new Map();
- for(const k of data.kernels){if(phase!=='all'&&k.phase!==phase||moduleId&&k.module!==moduleId||bound!=='all'&&k.bound!==bound||step!=='all'&&String(k.step)!==step||!`${k.name} ${k.module}`.toLowerCase().includes(q))continue;
+ for(const k of data.kernels){if(phase!=='all'&&k.phase!==phase||moduleId&&k.module!==moduleId||bound!=='all'&&k.bound!==bound||step!=='all'&&String(k.step)!==step||!`${k.name} ${moduleLabel(k,data.config)}`.toLowerCase().includes(q))continue;
  const key=JSON.stringify([k.name,k.phase,k.module,k.grid,k.block,k.bound]);if(!groups.has(key))groups.set(key,{...k,calls:[],duration_ms:0});const g=groups.get(key);g.calls.push(k);g.duration_ms+=k.duration_ms;}
  const sorted=[...groups.values()].sort((a,b)=>b.duration_ms-a.duration_ms);$('#count').textContent=`${sorted.length} groups`;
- $('#rows').innerHTML=sorted.length?sorted.map((g,i)=>`<tr class="expandable" tabindex="0" aria-expanded="false" data-group="${i}"><td><b title="${esc(g.name)}">▸ ${esc(g.name.length>95?g.name.slice(0,95)+'…':g.name)}</b><small>${esc(g.module)}</small></td><td>${esc(g.phase)}</td><td>${g.calls.length}</td><td>${time(g.duration_ms)}</td><td><span class="bound ${g.bound}">${g.bound==='unknown'?'미확인':g.bound+'-bound'}</span></td><td>${time(g.compute_ms)}<small> / call</small></td><td>${time(g.memory_ms)}<small> / call</small></td><td>${time(g.lower_ms)}<small> / call</small></td></tr>`).join(''):'<tr><td colspan="8" class="empty">표시할 커널이 없습니다. 추정 데이터는 아래 연산 단위 비용에서 확인하세요.</td></tr>';
+ $('#rows').innerHTML=sorted.length?sorted.map((g,i)=>`<tr class="expandable" tabindex="0" aria-expanded="false" data-group="${i}"><td><b title="${esc(g.name)}">▸ ${esc(g.name.length>95?g.name.slice(0,95)+'…':g.name)}</b><small class="operation-hint" title="${g.module==='unattributed'?'모델 연산 구간에 연결되지 않은 커널입니다. 설명은 커널명과 runner 코드에서 추정했습니다.':'모델 연산 구간'}">${esc(moduleLabel(g,data.config))}</small></td><td>${esc(g.phase)}</td><td>${g.calls.length}</td><td>${time(g.duration_ms)}</td><td><span class="bound ${g.bound}">${g.bound==='unknown'?'미확인':g.bound+'-bound'}</span></td><td>${time(g.compute_ms)}<small> / call</small></td><td>${time(g.memory_ms)}<small> / call</small></td><td>${time(g.lower_ms)}<small> / call</small></td></tr>`).join(''):'<tr><td colspan="8" class="empty">표시할 커널이 없습니다. 추정 데이터는 아래 연산 단위 비용에서 확인하세요.</td></tr>';
  $('#rows').querySelectorAll('[data-group]').forEach(row=>{const toggle=()=>{if(row.nextElementSibling?.classList.contains('detail')){row.nextElementSibling.remove();row.setAttribute('aria-expanded','false');return}const g=sorted[+row.dataset.group];const tr=document.createElement('tr');tr.className='detail';tr.innerHTML=`<td colspan="8">하한은 첫 호출 기준입니다. 호출별 세부 정보:<pre>${esc(JSON.stringify(g.calls.map(k=>({name:k.name,step:k.step,duration_ms:k.duration_ms,flops:k.flops,dram_bytes:k.bytes,source:k.source,compute_ms:k.compute_ms,memory_ms:k.memory_ms,lower_ms:k.lower_ms,grid:k.grid,block:k.block})),null,2))}</pre></td>`;row.after(tr);row.setAttribute('aria-expanded','true')};row.onclick=toggle;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}}});
 }
 async function load(id){runId=id;if([...$('#runs').options].some(o=>o.value===id))$('#runs').value=id;moduleId=null;data=await api(id==='example'?'/example.json':`/api/runs/${id}/result`);render()}
-async function refresh(){const list=await api('/api/runs');const select=$('#runs');select.innerHTML='<option value="example">예제 · 화면 검증 데이터</option>'+list.filter(r=>r.status==='completed').map(r=>`<option value="${r.id}">${r.id} · ${esc(r.config.runner)}</option>`).join('');select.value=runId;active=list.find(r=>!['completed','failed','cancelled'].includes(r.status));const latest=list[0];if(active){$('#status').innerHTML=`수집 ${esc(active.id)} · ${esc(active.status)} <button id="cancel">취소 및 세션 종료</button>`;$('#cancel').onclick=async()=>{await api(`/api/runs/${active.id}/cancel`,{method:'POST'});await refresh()}}else if(latest&&latest.id!==runId){$('#status').textContent=`${latest.id} · ${latest.status}${latest.error?' · '+latest.error:''}${latest.cleanup_error?' · 세션 종료 실패: '+latest.cleanup_error:''}`;if(follow&&latest.status==='completed')await load(latest.id)}else $('#status').textContent=latest?.cleanup_error?'세션 종료 실패: '+latest.cleanup_error:''}
+async function refresh(){const list=await api('/api/runs');const select=$('#runs');select.innerHTML='<option value="example">예제 · 화면 검증 데이터</option>'+list.filter(r=>r.status==='completed').map(r=>`<option value="${r.id}">${r.id} · ${esc(r.config.runner)}</option>`).join('');select.value=runId;active=list.find(r=>!['completed','failed','cancelled'].includes(r.status));const latest=list[0];if(active){$('#status').textContent=`수집 ${active.id} · ${active.status}`}else if(latest&&latest.id!==runId){$('#status').textContent=`${latest.id} · ${latest.status}${latest.error?' · '+latest.error:''}${latest.cleanup_error?' · 세션 종료 실패: '+latest.cleanup_error:''}`;if(follow&&latest.status==='completed')await load(latest.id)}else $('#status').textContent=latest?.cleanup_error?'세션 종료 실패: '+latest.cleanup_error:''}
 $('#runs').onchange=e=>{follow=false;load(e.target.value).catch(fail)};$('#refresh').onclick=()=>refresh().catch(fail);$('#clear').onclick=()=>{moduleId=null;render()};
 $('#phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.phase));
 $('#roof-phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.roofPhase));
 ['search','bound','step'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',table));
 $('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=`${runId}.json`;a.click();URL.revokeObjectURL(a.href)};
-$('#collect').onsubmit=async e=>{e.preventDefault();follow=true;try{await api('/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runner:$('#runner').value,dtype:$('#dtype').value,batch:+$('#batch').value,input_tokens:+$('#input').value,output_tokens:+$('#output').value})});await refresh()}catch(e){fail(e)}};
-(async()=>{await load('example');const runners=await api('/api/runners');$('#runner').innerHTML=runners.map(r=>`<option>${esc(r.id)}</option>`).join('');await refresh();setInterval(()=>refresh().catch(fail),2000)})().catch(fail);
+(async()=>{await load('example');await refresh();setInterval(()=>refresh().catch(fail),2000)})().catch(fail);
 
 let agentId=null;
 async function refreshAgents(){
@@ -85,11 +88,9 @@ async function refreshAgents(){
  $('#agent-select').innerHTML=tasks.length?tasks.map(t=>`<option value="${t.id}">${t.id} · ${esc(t.status)}</option>`).join(''):'<option value="">작업 없음</option>';
  if(!agentId)return;$('#agent-select').value=agentId;
  const task=tasks.find(t=>t.id===agentId);if(!task)return;
- $('#agent-state').textContent=`${task.id} · ${task.status}${task.error?' · '+task.error:''}`;
- if(['queued','running'].includes(task.status)){const b=document.createElement('button');b.textContent='취소';b.onclick=async()=>{await api(`/api/agent-tasks/${task.id}/cancel`,{method:'POST'});await refreshAgents()};$('#agent-state').append(b)}
+ $('#agent-state').textContent=`${task.id} · ${task.status}${task.timeout_sec?' · 제한 '+num(task.timeout_sec/60)+'분':''}${task.error?' · '+task.error:''}`;
  $('#agent-answer').textContent=task.response||'응답 대기 중';
  const logs=await api(`/api/agent-tasks/${task.id}/events`);$('#agent-events').textContent=(logs.tail||'').slice(-12000);
 }
 $('#agent-select').onchange=e=>{agentId=e.target.value;refreshAgents().catch(fail)};
-$('#agent-form').onsubmit=async e=>{e.preventDefault();try{const t=await api('/api/agent-tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:$('#agent-prompt').value})});agentId=t.id;await refreshAgents()}catch(e){fail(e)}};
 refreshAgents().catch(fail);setInterval(()=>refreshAgents().catch(fail),2000);

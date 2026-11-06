@@ -2,6 +2,7 @@ import asyncio
 import fcntl
 import json
 import os
+import re
 import tarfile
 import time
 import uuid
@@ -33,14 +34,35 @@ class Jobs:
     def runners(self):
         registry=DATA/'runners.json'
         return {'tiny_decoder':str(ROOT/'runners/tiny_decoder.py'), **(json.loads(registry.read_text()) if registry.exists() else {})}
+    def register(self, name, file):
+        if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}', name):
+            raise ValueError('Runner id must contain letters, digits, underscores or hyphens')
+        if name == 'tiny_decoder':
+            raise ValueError('The bundled tiny_decoder runner cannot be replaced')
+        path = Path(file).expanduser()
+        path = (ROOT / path).resolve() if not path.is_absolute() else path.resolve()
+        if not path.is_file() or path.suffix != '.py':
+            raise ValueError('Runner must be an existing Python file on the API server')
+        # Runner registration is brief and must not lose concurrent agent updates.
+        with (DATA / 'runners.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            registry = self.runners()
+            registry.pop('tiny_decoder', None)
+            registry[name] = str(path)
+            temp = DATA / 'runners.tmp'
+            temp.write_text(json.dumps(registry, indent=2))
+            temp.replace(DATA / 'runners.json')
+        return {'id': name, 'path': str(path)}
     def save(self,r):
         dest=DATA/r['id']; dest.mkdir(exist_ok=True)
         temp=dest/'job.tmp'; temp.write_text(json.dumps(r,indent=2)); temp.replace(dest/'job.json')
     async def command(self,r,*args,timeout=1800):
         with (DATA/r['id']/'commands.log').open('ab') as out:
-            proc=await asyncio.create_subprocess_exec(*map(str,args),stdout=out,stderr=out)
+            proc=await asyncio.create_subprocess_exec(*map(str,args),stdin=asyncio.subprocess.DEVNULL,stdout=out,stderr=out)
             try:
                 async with asyncio.timeout(timeout): code=await proc.wait()
+            except TimeoutError as error:
+                raise RuntimeError(f'{args[0]} {args[1]} exceeded its {timeout:g}s local command time limit') from error
             finally:
                 if proc.returncode is None:
                     proc.terminate()
@@ -87,7 +109,7 @@ class Jobs:
                     +f'with tarfile.open({("/content/"+session+".tar.gz")!r}) as a: a.extractall(p, filter="data")\n'
                     +f'subprocess.run([sys.executable,str(p/"bootstrap.py"),str(p)],check=True)\n')
                 state('profiling')
-                await self.command(r,'colab','exec','-s',session,'--timeout',c.get('timeout_sec',1800),'-f',script)
+                await self.command(r,'colab','exec','-s',session,'--timeout',c.get('timeout_sec',1800),'-f',script,timeout=c.get('timeout_sec',1800))
                 state('downloading')
                 await self.command(r,'colab','download','-s',session,remote+'/artifacts.tar.gz',work/'artifacts.tar.gz')
                 with tarfile.open(work/'artifacts.tar.gz') as archive: archive.extractall(work/'artifacts',filter='data')
@@ -101,9 +123,16 @@ class Jobs:
                 if (artifacts/'counters.csv').exists():
                     try: ncu=read_ncu(artifacts/'counters.csv')
                     except Exception as e: meta['warnings'].append('Counters unavailable: '+str(e))
-                result=analyze(meta,kernels,ncu)
+                meta['timing_source']='nsys' if (artifacts/'trace.nsys-rep').exists() else 'runner_single'
+                baseline=None
+                if (artifacts/'baseline.json').exists():
+                    try: baseline=json.loads((artifacts/'baseline.json').read_text())
+                    except (ValueError,OSError) as e: meta['warnings'].append('Baseline unavailable: '+str(e))
+                result=analyze(meta,kernels,ncu,baseline)
                 (work/'result.json').write_text(json.dumps(result,indent=2))
                 state('completed')
+        except TimeoutError:
+            r['error']=f'Profiling job exceeded its configured {c.get("timeout_sec",1800)}s time limit'; state('failed')
         except asyncio.CancelledError:
             state('cancelled')
         except Exception as e:

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Infer-opt GPU Benchmark"
+  short_description: "Correct GPU kernel and inference performance measurements"

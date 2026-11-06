@@ -2,6 +2,7 @@
 import csv
 import io
 import json
+import math
 import re
 import sqlite3
 from collections import defaultdict
@@ -120,7 +121,30 @@ def counters(metrics):
     return (paths if complete else None), None if rd is None or wr is None else rd + wr
 
 
-def analyze(meta, kernels, ncu=None):
+def timing_summary(meta, baseline):
+    profiled = {'total_ms': meta['total_ms'], **meta['phase_ms'],
+                'source': meta.get('timing_source', 'nsys')}
+    fallback = {**profiled, 'statistic': 'single', 'sample_count': 1}
+    if not baseline:
+        return fallback, 'Separate unprofiled baseline unavailable; timings are from the profiling run.'
+    try:
+        values = [baseline['total_ms'], baseline['phase_ms']['prefill'], baseline['phase_ms']['decode']]
+        if baseline.get('source') != 'unprofiled' or baseline['config'] != meta['config'] or baseline['gpu']['name'] != meta['gpu']['name']:
+            raise ValueError('Baseline workload/GPU/source does not match profiling run')
+        if baseline['sample_count'] != len(baseline['samples']) or baseline['sample_count'] < 1:
+            raise ValueError('Baseline sample count is invalid')
+        if any(not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in values) or values[0] <= 0:
+            raise ValueError('Baseline timings are invalid')
+        return {'total_ms': values[0], 'prefill': values[1], 'decode': values[2],
+                'source': 'unprofiled', 'statistic': baseline['statistic'],
+                'sample_count': baseline['sample_count'], 'samples': baseline['samples'],
+                'profiled': profiled}, None
+    except (KeyError, TypeError, ValueError) as error:
+        return fallback, 'Separate baseline rejected: ' + str(error)
+
+
+def analyze(meta, kernels, ncu=None, baseline=None):
+    timings, timing_warning = timing_summary(meta, baseline)
     hw = hardware(meta['gpu']['name'])
     # Order matching is intentionally all-or-nothing; never silently match repeated names after a gap.
     matched = bool(ncu) and len(ncu) == len(kernels) and all(a['name'] == b['name'] and (not b.get('grid') or a['grid']==b['grid']) and (not b.get('block') or a['block']==b['block']) for a,b in zip(kernels,ncu))
@@ -143,14 +167,15 @@ def analyze(meta, kernels, ncu=None):
         point = {'flops': f, 'bytes': d, 'source': 'estimated',
                  'scope': 'runner modeled operations; logical tensor traffic, not measured DRAM'}
     if point:
+        point['timing_source'] = timings['source']
         point['intensity'] = point['flops'] / point['bytes'] if point['bytes'] else None
-        point['tflops'] = point['flops'] / (meta['total_ms'] / 1000) / 1e12 if meta['total_ms'] else None
+        point['tflops'] = point['flops'] / (timings['total_ms'] / 1000) / 1e12 if timings['total_ms'] else None
     estimates = [{**o, **bounds(o['flops'], o['bytes'], hw), 'source': 'estimated'} for o in meta.get('estimates', [])]
     return with_phase_points({'schema_version': 1, 'hardware': hw, 'model': meta['model'], 'config': meta['config'],
-            'timings': {'total_ms': meta['total_ms'], **meta['phase_ms']}, 'point': point,
+            'timings': timings, 'point': point,
             'kernels': kernels, 'estimates': estimates, 'steps': meta.get('steps', []),
             'coverage': {'measured': sum(k['source'] == 'measured' for k in kernels), 'total': len(kernels)},
-            'warnings': meta.get('warnings', []) + ([] if matched else ['NCU counters unavailable or cross-run kernel sequence mismatch.']),
+            'warnings': meta.get('warnings', []) + ([timing_warning] if timing_warning else []) + ([] if matched else ['NCU counters unavailable or cross-run kernel sequence mismatch.']),
             'versions': meta.get('versions', {})})
 
 
@@ -174,7 +199,7 @@ def with_phase_points(result):
             traffic = sum(row['bytes'] for row in rows)
             if flops > 0 and traffic > 0:
                 point = {'flops': flops, 'bytes': traffic, 'source': source, 'scope': scope,
-                         'duration_ms': duration, 'intensity': flops / traffic,
+                         'duration_ms': duration, 'timing_source': result['timings'].get('source', 'legacy_profiled'), 'intensity': flops / traffic,
                          'tflops': flops / (duration / 1000) / 1e12}
         points[phase] = point
         if point:

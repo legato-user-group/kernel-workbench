@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from .jobs import Jobs, ROOT, DATA
-from .agents import Agents
+from .agents import AgentHistory
 from .analysis import with_phase_points
 
 class RunConfig(BaseModel):
@@ -17,16 +17,16 @@ class RunConfig(BaseModel):
     input_tokens:int=Field(128,ge=1,le=32768)
     output_tokens:int=Field(16,ge=1,le=2048)
     warmup:int=Field(1,ge=0,le=10)
+    baseline_repeats:int=Field(5,ge=1,le=30)
     timeout_sec:int=Field(1800,ge=60,le=7200)
     runner_options:dict=Field(default_factory=dict)
 
 jobs=Jobs()
-agents=Agents()
+agents=AgentHistory()
 @asynccontextmanager
 async def lifespan(app):
     await jobs.recover()
     yield
-    await agents.close()
     await jobs.close()
 app=FastAPI(title='Kernel Observatory',lifespan=lifespan)
 
@@ -38,6 +38,17 @@ async def local_mutations(request:Request, call_next):
         from fastapi.responses import JSONResponse
         return JSONResponse({'detail':'Cross-origin mutation rejected'},status_code=403)
     return await call_next(request)
+@app.get('/api/health')
+def health(): return {'status':'ok','execution':'external_agent','default_gpu':'A100','openapi_url':'/openapi.json','guide_url':'/api/guide'}
+@app.get('/api/guide')
+def guide(): return FileResponse(ROOT/'AGENT_API.md',media_type='text/markdown')
+class RunnerConfig(BaseModel):
+    id:str=Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$')
+    path:str=Field(min_length=1)
+@app.post('/api/runners',status_code=201)
+def register_runner(config:RunnerConfig):
+    try:return jobs.register(config.id,config.path)
+    except ValueError as e:raise HTTPException(422,str(e))
 @app.get('/api/runners')
 def runners(): return [{'id':name} for name in jobs.runners()]
 @app.get('/api/runs')
@@ -46,7 +57,11 @@ def runs():
     return sorted(jobs.records.values(),key=lambda r:r['created_at'],reverse=True)
 @app.post('/api/runs',status_code=202)
 async def create(config:RunConfig):
-    try: return await jobs.start(config.model_dump())
+    try:
+        run=await jobs.start(config.model_dump())
+        from fastapi.responses import JSONResponse
+        base=f'/api/runs/{run["id"]}'
+        return JSONResponse({**run,'links':{'status':base,'result':base+'/result','cancel':base+'/cancel','log':base+'/artifacts/commands.log'}},status_code=202,headers={'Location':base})
     except ValueError as e: raise HTTPException(409,str(e))
 def record(ident):
     jobs.refresh()
@@ -59,9 +74,12 @@ def result(ident:str):
     record(ident); path=DATA/ident/'result.json'
     if not path.exists(): raise HTTPException(409,'Result not ready')
     return with_phase_points(json.loads(path.read_text()))
-@app.post('/api/runs/{ident}/cancel')
+@app.post('/api/runs/{ident}/cancel',status_code=202)
 async def cancel(ident:str):
-    record(ident); await jobs.cancel(ident); return record(ident)
+    run=record(ident)
+    if run['status'] not in ('completed','failed','cancelled'):
+        (DATA/ident/'cancel').touch()
+    return {**run,'cancel_requested':run['status'] not in ('completed','failed','cancelled')}
 @app.get('/api/runs/{ident}/artifacts/{name}')
 def artifact(ident:str,name:str):
     record(ident)
@@ -69,23 +87,12 @@ def artifact(ident:str,name:str):
     path=DATA/ident/name
     if not path.exists(): raise HTTPException(404)
     return FileResponse(path,filename=name)
-class AgentConfig(BaseModel):
-    prompt:str=Field(min_length=1,max_length=32000)
-    timeout_sec:int=Field(1800,ge=30,le=7200)
-    model:str|None=None
 @app.get('/api/agent-tasks')
 def agent_tasks(): return agents.records()
-@app.post('/api/agent-tasks',status_code=202)
-async def agent_start(config:AgentConfig,request:Request):
-    try:return await agents.start(config.prompt,str(request.base_url).rstrip('/'),config.timeout_sec,config.model)
-    except ValueError as e:raise HTTPException(409,str(e))
 @app.get('/api/agent-tasks/{ident}')
 def agent_task(ident:str):
     try:return agents.get(ident)
     except (ValueError,FileNotFoundError):raise HTTPException(404,'Unknown agent task')
-@app.post('/api/agent-tasks/{ident}/cancel')
-async def agent_cancel(ident:str):
-    agent_task(ident);await agents.cancel(ident);return {'id':ident,'cancel_requested':True}
 @app.get('/api/agent-tasks/{ident}/events')
 def agent_events(ident:str):
     agent_task(ident);path=agents.directory/ident/'events.jsonl'

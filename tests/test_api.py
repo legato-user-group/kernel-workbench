@@ -7,7 +7,10 @@ def test_api_and_static():
     assert c.get('/').status_code==200
     assert c.get('/example.json').json()['schema_version']==1
     assert c.get('/api/agent-tasks').status_code==200
-    assert c.post('/api/agent-tasks',json={'prompt':''}).status_code==422
+    assert c.post('/api/agent-tasks',json={'prompt':'do work'}).status_code==405
+    assert '/api/agent-tasks/{ident}/cancel' not in app.openapi()['paths']
+    assert c.get('/api/health').json()['execution']=='external_agent'
+    assert c.get('/api/guide').status_code==200
     assert c.get('/api/runners').json()[0]['id']=='tiny_decoder'
     assert c.get('/api/runs/nonexistent').status_code==404
     assert c.post('/api/runs',json={'batch':0}).status_code==422

@@ -52,6 +52,8 @@ try:
                   '--force-overwrite','-o','counters',*entry],'ncu.log')
             if Path('counters.ncu-rep').exists():
                 call(['ncu','--import','counters.ncu-rep','--page','raw','--csv','--print-units','base','--rename-kernels','off'],'counters.csv')
+    # All Nsight subprocesses have exited; benchmark with a plain Python process.
+    call([sys.executable,'remote_entry.py','config.json','runner.py','baseline.json','--benchmark'],'baseline.log')
     if not Path('meta.json').exists(): raise RuntimeError('Runner did not produce metadata; inspect runner/nsys logs')
 except Exception as exc:
     status['warnings'].append(str(exc))

@@ -1,6 +1,6 @@
 # Kernel Observatory
 
-로컬 대시보드와 headless 에이전트용 Colab A100 추론 프로파일러입니다. 모델 구조, prefill/decode, 전체 roofline 위치, 커널별 compute/memory 병목과 이론적 하한을 연결합니다.
+코딩 에이전트용 HTTP API와 조회용 로컬 대시보드를 제공하는 Colab A100 추론 프로파일러입니다. 모델 구조, prefill/decode, 전체 roofline 위치, 커널별 compute/memory 병목과 이론적 하한을 연결합니다.
 
 ## 시작
 
@@ -8,27 +8,30 @@ Python 3.12+, `uv`, 인증된 `colab` CLI가 필요합니다. 로컬 GPU는 필�
 
 ```sh
 uv sync --group dev
-uv run python -m kernel_dashboard serve
+uv run python -m kernel_dashboard api
 ```
 
 브라우저: http://127.0.0.1:8765 · API 문서: http://127.0.0.1:8765/docs
 
 화면 검증용 예제가 기본 제공됩니다. 예제는 실제 GPU 측정값이 아니며 화면에서 명확히 표시합니다. 로컬 전용이며 외부 호스팅은 하지 않습니다.
 
-## Headless 에이전트 워크플로
+## 코딩 에이전트 워크플로
 
-Codex CLI를 비대화형으로 호출합니다. `--prompt` 인자를 한 번 전달하고, 질문 응답 없이 최종 응답과 JSONL 이벤트를 회수합니다. OpenAI/Codex 인증은 기존 CLI 설정을 사용합니다.
+코딩 에이전트가 HTTP API를 직접 호출합니다. 이 서비스는 에이전트나 LLM을 실행하지 않습니다. Codex, Claude Code 등 어떤 코딩 에이전트든 같은 API를 사용할 수 있습니다. 대시보드는 조회 전용입니다.
+
+연동 절차와 curl 예제는 [AGENT_API.md](AGENT_API.md), 머신용 명세는 `/openapi.json`에 있습니다. `GET /api/health`로 서비스와 문서 주소를 확인하고, `GET /api/guide`로 에이전트용 가이드를 읽을 수 있습니다.
 
 ```sh
-uv run python -m kernel_dashboard agent --prompt "tiny_decoder를 A100에서 프로파일링하고 병목과 하한 시간을 분석해줘"
-uv run python -m kernel_dashboard agent --prompt "등록된 optimized runner의 수치 정확성을 확인하고 느린 커널을 개선한 뒤 전후 결과를 비교해줘" --timeout 3600
+curl --fail-with-body --silent --show-error http://127.0.0.1:8765/api/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"runner":"tiny_decoder","input_tokens":128,"output_tokens":16,"timeout_sec":7200}'
 ```
 
-내부 호출은 `codex -a never exec --json --sandbox workspace-write ... PROMPT`입니다. 로컬 수집 API 접근을 위해 작업 sandbox의 네트워크 접근을 활성화하며 승인·sandbox 우회 옵션은 사용하지 않습니다. 프롬프트는 shell을 거치지 않고 단일 argv로 전달합니다. Codex 기본 모델을 사용하고 `--model`로 명시할 수 있습니다.
+202 응답의 `id`와 `links.status`를 저장하고 상태를 조회한 뒤 `links.result`에서 분석 결과를 받습니다. 커널 개선 코드는 호출한 코딩 에이전트가 작성·검증하고, 같은 조건으로 수집한 전후 결과를 비교합니다. GPU 수집 제한 시간만 적용되며 중첩된 에이전트 프로세스나 에이전트 전체 제한 시간은 없습니다.
 
-서버가 없으면 해당 CLI가 로컬 수집 broker를 자동 기동하고 종료 시 정리합니다. 기존 대시보드 서버가 있으면 재사용합니다. 에이전트는 이 API를 통해 Colab 작업을 시작하고 결과를 읽습니다. 작업 ID·상태를 먼저 출력하고 완료 후 `response`, `run_ids`, 종료 코드가 담긴 JSON을 출력합니다. `.runs/agents/TASK_ID/`에 `prompt.txt`, `response.txt`, `events.jsonl`, `stderr.log`, `task.json`을 보관합니다. 한 번에 Codex 작업 하나만 실행합니다. 웹에서 에이전트 프롬프트 제출·진행 확인·응답 조회·취소도 가능합니다.
+기존 `agent --prompt` 명령과 `POST /api/agent-tasks`는 제거했습니다. 과거 `.runs/agents/`의 응답·이벤트 기록은 조회 API와 대시보드에서 계속 확인할 수 있습니다. 새로운 대화 및 응답 기록은 호출한 코딩 에이전트가 관리합니다. `serve` 명령은 `api`의 기존 호환 이름으로 유지됩니다.
 
-아래 `run` 명령은 에이전트가 사용하는 저수준 모델 수집 도구입니다. 대시보드와 무관하게 실행할 수 있습니다.
+HTTP 호출 외에 다음 저수준 CLI도 사용할 수 있습니다.
 
 ```sh
 uv run python -m kernel_dashboard run --runner tiny_decoder
@@ -47,7 +50,7 @@ uv run python -m kernel_dashboard recover
 {
   "gpu": "A100", "dtype": "bf16", "batch": 1,
   "input_tokens": 128, "output_tokens": 16,
-  "warmup": 1, "timeout_sec": 1800,
+  "warmup": 1, "baseline_repeats": 5, "timeout_sec": 1800,
   "runner_options": {}
 }
 ```
@@ -56,7 +59,7 @@ uv run python -m kernel_dashboard recover
 uv run python -m kernel_dashboard run --runner tiny_decoder --config config.json
 ```
 
-결과는 `.runs/RUN_ID/result.json`, 원본 보고서는 `artifacts.tar.gz`에 저장합니다. API와 CLI는 같은 저장소와 프로세스 잠금을 사용합니다. `KERNEL_OPT_DATA`로 저장 경로를 변경할 수 있습니다. 커널을 개선한 runner를 다시 실행하고 두 결과 JSON의 **같은 입력 설정·GPU·정밀도·수집 출처**를 비교하세요. 최적화 작업은 `agent --prompt`로 명시적으로 요청하며, 실제 변경과 검증 내용은 Codex의 최종 응답과 이벤트 로그에 남습니다.
+결과는 `.runs/RUN_ID/result.json`, 원본 보고서는 `artifacts.tar.gz`에 저장합니다. API와 CLI는 같은 저장소와 프로세스 잠금을 사용합니다. `KERNEL_OPT_DATA`로 저장 경로를 변경할 수 있습니다. 커널을 개선한 runner를 다시 실행하고 두 결과 JSON의 **같은 입력 설정·GPU·정밀도·수집 출처**를 비교하세요. 최적화 작업과 검증 응답은 호출한 코딩 에이전트가 관리합니다.
 
 ## 사용자 runner
 
@@ -80,6 +83,7 @@ uv run python -m kernel_dashboard run --runner optimized --config config.json
 ## 분석 정의
 
 - Nsight Systems: CUDA API correlation과 CPU NVTX 포함 관계로 커널의 모델 연산·단계를 매핑합니다. CPU 구간과 GPU 실행 시각을 직접 겹쳐 매핑하지 않습니다.
+- 기준 시간: Nsight 수집이 끝난 뒤 프로파일러와 NVTX를 끈 별도 Python 프로세스에서 같은 runner를 기본 5회 실행하고, 동기화된 추론 시간의 중앙값을 사용합니다. 각 표본은 runner를 다시 초기화하므로 로딩·워밍업은 시간이 아닌 전체 작업 소요 시간에만 포함됩니다. 큰 모델은 `baseline_repeats`를 조절할 수 있습니다. 원본 표본은 `baseline.json`, 프로파일링 중 시간은 결과의 `timings.profiled`에 보존합니다. 기준 측정 실패·구성/GPU 불일치 시 수집 중 시간으로 돌아가며 출처와 경고를 표시합니다.
 - Nsight Compute: 동일한 입력을 application replay로 별도 실행합니다. 카운터 이름은 설치된 버전에서 조회합니다. cache/clock 제어는 `none`으로 설정합니다.
 - 커널 FLOPs는 지원되는 scalar FP32/FP64 instruction(FMA=2) 및 Tensor Core operation counters에서 계산합니다. DRAM bytes는 read + write입니다.
 - 하한(ms): `t_compute = 1000 × max_path(F_path / P_path)`, `t_memory = 1000 × bytes / bandwidth`, `t_lower = max(t_compute, t_memory)`. 병목은 큰 쪽으로 분류합니다. 병목 판정은 DRAM roofline 모델 기준이며 런치 지연·캐시·점유율 진단을 대체하지 않습니다.
@@ -93,15 +97,21 @@ uv run python -m kernel_dashboard run --runner optimized --config config.json
 
 ## API
 
-- `GET/POST /api/agent-tasks`, `GET /api/agent-tasks/{id}`, `GET /api/agent-tasks/{id}/events`, `POST /api/agent-tasks/{id}/cancel`
-- `GET /api/runners`, `GET /api/runs`
+- `GET /api/health`, `GET /api/guide`, `GET /openapi.json`
+- `GET /api/agent-tasks`, `GET /api/agent-tasks/{id}`, `GET /api/agent-tasks/{id}/events` — 과거 기록 조회 전용
+- `GET/POST /api/runners` — 조회 및 서버 파일 경로로 runner 등록
+- `GET /api/runs`
 - `POST /api/runs` — 설정 JSON, 202와 작업 ID 반환
 - `GET /api/runs/{id}` — 단계·오류·세션 정리 상태
 - `GET /api/runs/{id}/result` — 정규화 분석 결과
-- `POST /api/runs/{id}/cancel`
+- `POST /api/runs/{id}/cancel` — 202 즉시 반환, 상태 조회로 종료 확인
 - `GET /api/runs/{id}/artifacts/{result.json|artifacts.tar.gz|commands.log}`
 
 로컬 서버만 사용하세요. 등록한 runner는 신뢰하는 코드여야 합니다. 다른 웹사이트의 cross-origin 변경 요청은 거부합니다. Colab 인증 정보는 기존 CLI가 관리하며 브라우저나 보고서에 복사하지 않습니다.
+
+## 프로젝트 측정 스킬
+
+[`.agents/skills/infer-opt-benchmark/SKILL.md`](.agents/skills/infer-opt-benchmark/SKILL.md)에 infer-opt 방식의 측정 절차를 정리했습니다. 이 저장소에서 `$infer-opt-benchmark`로 사용할 수 있습니다. 정확성 검증, 모델을 재사용하는 반복 측정, wall/CUDA Event 시간 구분, 별도 프로파일링과 캐시 조건을 다룹니다.
 
 ## 검증
 
@@ -112,6 +122,6 @@ node --check kernel_dashboard/static/app.js
 
 계산, 비동기 NVTX 귀속, CSV 단위, 수집 간 매칭 실패, API 검증, 프로세스 잠금, 취소·세션 정리를 테스트합니다.
 
-실제 통합 검증: Codex `exec`가 프롬프트를 받아 broker로 A100 작업을 요청하고 결과를 읽어 최종 응답을 반환했습니다. A100-SXM4-40GB, BF16, batch 1, 입력 32 / 출력 1에서 커널 43개 중 43개 카운터를 매핑했습니다. 별도의 입력 128 / 출력 16 실행에서 748개 커널의 prefill/decode 귀속을 확인했습니다. 세션 자동 종료와 활성 세션 없음까지 확인했습니다. 데스크톱·390px 모바일 화면에서 브라우저 오류와 가로 넘침이 없음을 확인했습니다.
+이전 버전의 실제 통합 검증: Codex `exec`가 프롬프트를 받아 broker로 A100 작업을 요청하고 결과를 읽어 최종 응답을 반환했습니다. A100-SXM4-40GB, BF16, batch 1, 입력 32 / 출력 1에서 커널 43개 중 43개 카운터를 매핑했습니다. 별도의 입력 128 / 출력 16 실행에서 748개 커널의 prefill/decode 귀속을 확인했습니다. 세션 자동 종료와 활성 세션 없음까지 확인했습니다. 데스크톱·390px 모바일 화면에서 브라우저 오류와 가로 넘침이 없음을 확인했습니다.
 
 구간별 roofline 추가 검증: Codex가 입력 128 / 출력 16으로 실행한 A100 수집에서 748/748 커널 카운터를 매핑했고, prefill 43개·decode 705개 커널로 각 구간의 측정점을 계산했습니다. 출력 1토큰 실행의 decode 미실행 안내와 구간 비교/선택을 브라우저에서 확인했으며 회귀 테스트 16개가 통과했습니다.

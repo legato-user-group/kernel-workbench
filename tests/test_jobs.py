@@ -44,3 +44,34 @@ def test_recovery_does_not_stop_active_agent(tmp_path,monkeypatch):
         assert json.loads((tmp_path/'live/job.json').read_text())['status']=='profiling'
         agent.release()
     asyncio.run(check())
+
+
+def test_profiling_subprocess_uses_requested_timeout(tmp_path,monkeypatch):
+    monkeypatch.setattr(module,'DATA',tmp_path)
+    async def check():
+        manager=module.Jobs();observed=[]
+        async def fake(record,*args,**kwargs):
+            if args[1]=='exec':
+                observed.append((args,kwargs))
+                raise RuntimeError('End of command-only test')
+        manager.command=fake
+        r=await manager.start(RunConfig(timeout_sec=7200).model_dump())
+        await manager.tasks[r['id']]
+        args,kwargs=observed[0]
+        assert args[args.index('--timeout')+1]==7200
+        assert kwargs['timeout']==7200
+        assert not r['owns_session'] and manager.lease is None
+    asyncio.run(check())
+
+
+def test_colab_subprocess_never_waits_for_server_stdin(tmp_path,monkeypatch):
+    monkeypatch.setattr(module,'DATA',tmp_path)
+    manager=module.Jobs();record={'id':'stdin-test'};(tmp_path/record['id']).mkdir()
+    class Process:
+        returncode=0
+        async def wait(self):return 0
+    async def spawn(*args,**kwargs):
+        assert kwargs['stdin']==asyncio.subprocess.DEVNULL
+        return Process()
+    monkeypatch.setattr(asyncio,'create_subprocess_exec',spawn)
+    asyncio.run(manager.command(record,'colab','exec','-f','script.py'))
