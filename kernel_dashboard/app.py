@@ -7,10 +7,12 @@ from fastapi.staticfiles import StaticFiles
 from .paths import ROOT
 from .reports import ReportStore, ReportUpload, ARTIFACT_NAMES
 from .agents import AgentHistory
+from .experiments import ExperimentStore, ExperimentUpload, compare
 from .analysis import with_phase_points
 
 store = ReportStore()
 agents = AgentHistory()
+experiments = ExperimentStore()
 app = FastAPI(title='Kernel Observatory Results API')
 
 
@@ -99,6 +101,39 @@ def artifact(ident: str, name: str):
     if not path.is_file():
         raise HTTPException(404)
     return FileResponse(path, filename=name)
+
+
+def experiment_result(saved):
+    return {**saved, 'comparison': compare(saved, store)}
+
+
+@app.get('/api/experiments')
+def list_experiments(series: str | None = None):
+    return [experiment_result(saved) for saved in experiments.records(series)]
+
+
+@app.post('/api/experiments', status_code=201)
+def upload_experiment(upload: ExperimentUpload):
+    # References are checked before publishing; failed attempts need no run.
+    for ident in (upload.baseline_run_id, upload.candidate_run_id):
+        if ident:
+            record(ident)
+            if not (store.path(ident) / 'result.json').is_file():
+                raise HTTPException(422, 'Linked run has no result')
+    try:
+        saved = experiments.save(upload)
+    except FileExistsError as error:
+        raise HTTPException(409, str(error))
+    return JSONResponse(experiment_result(saved), status_code=201,
+                        headers={'Location': f'/api/experiments/{saved["id"]}'})
+
+
+@app.get('/api/experiments/{ident}')
+def get_experiment(ident: str):
+    try:
+        return experiment_result(experiments.get(ident))
+    except (ValueError, FileNotFoundError):
+        raise HTTPException(404, 'Unknown experiment')
 
 
 @app.get('/api/agent-tasks')

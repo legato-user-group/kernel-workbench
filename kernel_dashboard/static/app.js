@@ -84,16 +84,30 @@ $('#roof-phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b
 $('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=`${runId}.json`;a.click();URL.revokeObjectURL(a.href)};
 (async()=>{await load('example');await refresh();setInterval(()=>refresh().catch(fail),2000)})().catch(fail);
 
-let agentId=null;
-async function refreshAgents(){
- const tasks=await api('/api/agent-tasks');
- if(!agentId&&tasks.length)agentId=tasks[0].id;
- $('#agent-select').innerHTML=tasks.length?tasks.map(t=>`<option value="${t.id}">${t.id} · ${esc(t.status)}</option>`).join(''):'<option value="">작업 없음</option>';
- if(!agentId)return;$('#agent-select').value=agentId;
- const task=tasks.find(t=>t.id===agentId);if(!task)return;
- $('#agent-state').textContent=`${task.id} · ${task.status}${task.timeout_sec?' · 제한 '+num(task.timeout_sec/60)+'분':''}${task.error?' · '+task.error:''}`;
- $('#agent-answer').textContent=task.response||'응답 대기 중';
- const logs=await api(`/api/agent-tasks/${task.id}/events`);$('#agent-events').textContent=(logs.tail||'').slice(-12000);
+let experimentId=null,experimentRecords=[],experimentFingerprint='';
+const experimentStatuses={completed:'완료',failed:'실패',inconclusive:'판단 보류'};
+const correctnessStatuses={passed:'통과',failed:'실패',not_checked:'미검증'};
+const comparisonReasons={baseline_missing:'기준 실행 없음',candidate_missing:'후보 실행 없음',baseline_unavailable:'기준 결과를 찾을 수 없음',candidate_unavailable:'후보 결과를 찾을 수 없음',baseline_not_independent:'기준 실행의 독립 측정 없음',candidate_not_independent:'후보 실행의 독립 측정 없음',gpu_mismatch:'GPU가 다름',model_mismatch:'모델이 다름',workload_mismatch:'측정 조건이 다름',correctness_not_passed:'정확성 검증 통과 필요',attempt_not_completed:'완료되지 않은 시도'};
+function renderExperiments(){
+ const series=$('#experiment-series').value;
+ const filtered=experimentRecords.filter(e=>!series||e.series===series);
+ if(!filtered.some(e=>e.id===experimentId))experimentId=filtered[0]?.id||null;
+ const fingerprint=JSON.stringify([experimentRecords,series,experimentId]);
+ if(fingerprint===experimentFingerprint)return;experimentFingerprint=fingerprint;
+ $('#experiment-series').innerHTML='<option value="">모든 시리즈</option>'+[...new Set(experimentRecords.map(e=>e.series))].map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+ $('#experiment-series').value=series;
+ const improvement=e=>{const v=e.comparison.latency_reduction_pct.total_ms;return v==null?'비교 보류':`${v>=0?'시간 단축':'시간 증가'} ${num(Math.abs(v),1)}%`};
+ $('#experiment-list').innerHTML=filtered.length?'<div class="table-wrap"><table class="experiment-table"><thead><tr><th>시도 · 시리즈</th><th>상태</th><th>정확성</th><th>전체 시간 변화</th><th>기록 시각</th></tr></thead><tbody>'+filtered.map(e=>`<tr class="${e.id===experimentId?'selected':''}"><td><button class="experiment-open" data-experiment="${esc(e.id)}" aria-pressed="${e.id===experimentId}">${esc(e.title)}</button><small>${esc(e.series)} · ${esc(e.id)}</small></td><td>${experimentStatuses[e.status]}</td><td>${correctnessStatuses[e.correctness.status]}</td><td>${improvement(e)}</td><td>${esc(new Date(e.created_at*1000).toLocaleString('ko-KR'))}</td></tr>`).join('')+'</tbody></table></div>':'<div class="empty">아직 기록된 실험이 없습니다. 에이전트가 POST /api/experiments로 시도별 결과를 기록할 수 있습니다.</div>';
+ $('#experiment-list').querySelectorAll('[data-experiment]').forEach(b=>b.onclick=()=>{experimentId=b.dataset.experiment;renderExperiments()});
+ const e=filtered.find(e=>e.id===experimentId),detail=$('#experiment-detail');detail.hidden=!e;if(!e)return;
+ const c=e.comparison;
+ const field=(label,value)=>`<div><h3>${label}</h3><p>${esc(value||'기록 없음')}</p></div>`;
+ const runButton=(role,label)=>c[role]?`<button data-experiment-run="${esc(c[role].run_id)}">${label} ${esc(c[role].run_id)} ↗</button>`:'';
+ const comparisonTable=c.baseline||c.candidate?'<div class="table-wrap"><table><thead><tr><th>구간</th><th>기준 시간</th><th>후보 시간</th><th>배속 · 기준 / 후보</th></tr></thead><tbody>'+[['total_ms','전체'],['prefill','Prefill'],['decode','Decode']].map(([key,label])=>`<tr><td>${label}</td><td>${time(c.baseline?.timings[key])}</td><td>${time(c.candidate?.timings[key])}</td><td>${c.speedup[key]==null?'—':num(c.speedup[key],3)+'×'}</td></tr>`).join('')+'</tbody></table></div>':'';
+ const conditions=['baseline','candidate'].filter(role=>c[role]).map(role=>({role,run_id:c[role].run_id,model:c[role].model_name,hardware:c[role].hardware.name,timing_source:c[role].timings.source,config:c[role].config}));
+ detail.innerHTML=`<div class="experiment-detail-head"><h3>${esc(e.title)}</h3><span class="badge">${experimentStatuses[e.status]} · 정확성 ${correctnessStatuses[e.correctness.status]}</span></div><div class="experiment-fields">${field('변경 내용',e.changes)}${field('가설',e.hypothesis)}${field('코드 버전 · 커밋 또는 해시',e.code_revision)}${field('실행 환경',e.environment)}${field('정확성 검증',e.correctness.details)}${field('결과 해석',e.conclusion)}${field('다음 시도',e.next_steps)}</div><div class="experiment-run-links">${runButton('baseline','기준 결과')}${runButton('candidate','후보 결과')}</div>${comparisonTable}<p class="comparison-note">${c.eligible?'같은 모델·GPU·측정 조건의 독립 실행 시간으로 비교했습니다. 정확성 검증은 에이전트가 기록한 결과입니다.':`개선율 비교 보류: ${c.reasons.map(r=>comparisonReasons[r]||r).join(' · ')}`}</p>${conditions.length?`<details class="experiment-conditions"><summary>측정 조건 및 출처</summary><pre>${esc(JSON.stringify(conditions,null,2))}</pre></details>`:''}`;
+ detail.querySelectorAll('[data-experiment-run]').forEach(b=>b.onclick=async()=>{try{follow=false;await load(b.dataset.experimentRun);$('#metrics').scrollIntoView({behavior:'smooth',block:'start'})}catch(error){fail(error)}});
 }
-$('#agent-select').onchange=e=>{agentId=e.target.value;refreshAgents().catch(fail)};
-refreshAgents().catch(fail);setInterval(()=>refreshAgents().catch(fail),2000);
+async function refreshExperiments(){experimentRecords=await api('/api/experiments');renderExperiments()}
+$('#experiment-series').onchange=renderExperiments;
+refreshExperiments().catch(fail);setInterval(()=>refreshExperiments().catch(fail),2000);

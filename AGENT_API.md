@@ -143,3 +143,68 @@ Read `GET /api/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/result`, or
 The dashboard picks up new uploads on its next refresh and shows `summary`, model
 structure, prefill/decode roofline points and kernel analysis. Prior local results
 and historical agent logs remain readable.
+
+## Record an optimization attempt
+
+After uploading measurements, record the optimization attempt separately. This
+does not execute code or start a session. Use `series` to group related attempts.
+
+```json
+{
+  "id": "gemv-attempt-01",
+  "series": "decoder-gemv",
+  "title": "Fuse dequantization and GEMV",
+  "hypothesis": "Reduce intermediate memory traffic.",
+  "changes": "Load and dequantize weights inside the GEMV kernel.",
+  "code_revision": "candidate commit or source hash",
+  "environment": "SSH GPU host, A100",
+  "status": "completed",
+  "baseline_run_id": "baseline-report-id",
+  "candidate_run_id": "candidate-report-id",
+  "correctness": {
+    "status": "passed",
+    "details": "Full logits and KV cache checked against the reference; record actual errors and tolerances."
+  },
+  "conclusion": "Record the measured outcome, including regressions.",
+  "next_steps": "Tune split-K under the same workload."
+}
+```
+
+Save this payload as a JSON file and send it:
+
+```sh
+curl --fail-with-body --silent --show-error http://127.0.0.1:8765/api/experiments \
+  -H 'Content-Type: application/json' --data-binary @experiment.json
+```
+
+`title` and `changes` are required. Omit `id` for a generated ID; `series` defaults
+to `default`. A `completed` attempt requires a candidate report. Both report IDs
+must exist and contain results, and must differ. A first baseline attempt can
+link just its candidate report without a previous baseline.
+
+For compilation/execution failures without a measurement, use `status: failed`
+or `inconclusive`, omit candidate/baseline IDs as needed, and record the error and
+next step. Correctness defaults to `not_checked`; use `passed` or `failed` with
+the actual validation evidence. The service stores the agent's validation claim;
+it does not perform numerical checks. Do not claim validation that was not run.
+
+The API returns **201** and a `Location` header. Duplicate IDs return **409**,
+missing linked reports **404**, and invalid input **422**. Records are immutable:
+make a new attempt rather than rewriting history. Failed checks, compile failures
+and slower candidates should remain in the series.
+
+`GET /api/experiments` lists newest first. Filter with `?series=decoder-gemv`;
+`GET /api/experiments/{id}` reads one attempt. Results include a server-derived
+`comparison` with linked timing/configuration/hardware, reasons for withholding
+comparison, `speedup` and `latency_reduction_pct` for total/prefill/decode.
+Speedups require completed status, correctness `passed`, matching model/GPU names and
+workload configuration, and both timing sources `unprofiled`. Runner names, GPU
+selection hints, warmup/repetition counts and timeout are excluded from the
+configuration comparison. All other configuration fields must match.
+Zero-duration phases have no ratio. `speedup = baseline / candidate`; negative
+latency reduction indicates a regression. If a linked result is later removed,
+the attempt remains visible and comparison becomes unavailable.
+
+Records live at `.runs/experiments/{id}/experiment.json` (or below
+`KERNEL_OPT_DATA`). The dashboard shows experiment history instead of the former
+agent-response/event panel; historical agent files and read APIs remain intact.

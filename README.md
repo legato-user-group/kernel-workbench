@@ -63,6 +63,16 @@ uv run python -m kernel_dashboard analyze --artifacts /tmp/tiny-collection/artif
 
 카운터 권한이나 Nsight 도구가 없는 환경에서도 시간·모델 구조와 비용 추정은 유지되며 누락 경고가 표시됩니다. GPU 사양·도구 버전·원본 로그·누락 범위는 진단 패널과 JSON에 기록됩니다. 제공되는 수집 스크립트는 NVIDIA CUDA/Nsight용이며 시스템 패키지를 자동 설치하지 않습니다. 에이전트가 환경에 맞게 도구를 준비합니다. 다른 GPU의 수집기도 동일한 결과 JSON을 작성해 업로드할 수 있습니다. 미등록 GPU는 사양이 없을 때 roofline·하한을 임의 추정하지 않습니다.
 
+## 최적화 실험 이력
+
+대시보드의 실험 이력에서 시리즈별로 시도를 모아 보고, 변경 내용·가설·코드 버전·실행 환경·정확성 검증·해석·다음 시도를 확인합니다. 기준·후보 결과를 열면 해당 측정의 모델 구조, roofline, 커널과 원본 파일을 볼 수 있습니다.
+
+에이전트는 측정 결과를 먼저 업로드한 뒤 `POST /api/experiments`로 `baseline_run_id`와 `candidate_run_id`를 연결합니다. 실험은 `.runs/experiments/<ID>/experiment.json`에 저장하며 기존 ID를 덮어쓰지 않습니다. 성능이 떨어진 시도도 그대로 기록합니다. 컴파일·실행 실패로 결과가 없다면 `status: failed` 또는 `inconclusive`로 기록할 수 있습니다.
+
+개선율은 완료된 실험에서 에이전트가 정확성 검증 통과를 기록하고, 두 실행의 모델 이름·GPU 이름·작업 설정과 독립 측정 출처가 맞을 때 계산합니다. runner 이름, GPU 선택 힌트, 워밍업·반복 횟수·시간 제한은 작업 설정 비교에서 제외합니다. 그 밖의 설정이 다르거나 프로파일링 중 시간만 있으면 전후 시간을 보존하고 개선율은 보류합니다. 양수는 시간 단축, 음수는 시간 증가이며 `배속 = 기준 시간 / 후보 시간`입니다. 과거 에이전트 응답·이벤트 파일은 보존하며 기존 조회 API로 읽을 수 있습니다.
+
+기록 예제와 필드 설명은 [AGENT_API.md](AGENT_API.md#record-an-optimization-attempt)에 있습니다.
+
 ## API
 
 - `GET /api/health`, `GET /api/guide`, `GET /openapi.json`
@@ -70,6 +80,8 @@ uv run python -m kernel_dashboard analyze --artifacts /tmp/tiny-collection/artif
 - `GET /api/runs`, `GET /api/runs/{id}`, `GET /api/runs/{id}/result`
 - `PUT /api/runs/{id}/artifacts/{name}` — 원본 아카이브·로그·기준 시간 파일 업로드
 - `GET /api/runs/{id}/artifacts/{name}` — 파일 다운로드
+- `POST /api/experiments` — 최적화 시도 기록, 201 반환
+- `GET /api/experiments?series=...`, `GET /api/experiments/{id}` — 실험 이력·전후 비교 조회
 - `GET /api/agent-tasks`, `GET /api/agent-tasks/{id}`, `GET /api/agent-tasks/{id}/events` — 과거 기록 조회
 
 서버 시작 시 자동 복구·GPU 세션 종료를 수행하지 않습니다. 원격 실행과 결과 업로드는 별개의 단계이므로 에이전트가 결과를 검토한 뒤 업로드할 수 있습니다. 구버전 서버는 업로드 전에 반드시 재시작하세요. `POST /api/runs`의 의미가 실행 요청에서 결과 업로드로 변경됐습니다.
@@ -85,7 +97,7 @@ uv run pytest -q
 node --check kernel_dashboard/static/app.js
 ```
 
-계산, 비동기 NVTX 귀속, CSV 단위, 수집 간 매칭 실패, API 검증, 에이전트 측 파일 준비·분석, 업로드 검증·중복 방지·첨부 파일 저장과 서버의 프로세스 미실행을 테스트합니다.
+계산, 비동기 NVTX 귀속, CSV 단위, 수집 간 매칭 실패, API 검증, 에이전트 측 파일 준비·분석, 업로드 검증·중복 방지·첨부 파일 저장, 실험 비교의 측정 조건·정확성 제한, 실패·성능 저하 보존과 서버의 프로세스 미실행을 테스트합니다.
 
 이전 버전의 실제 통합 검증: Codex `exec`가 프롬프트를 받아 broker로 A100 작업을 요청하고 결과를 읽어 최종 응답을 반환했습니다. A100-SXM4-40GB, BF16, batch 1, 입력 32 / 출력 1에서 커널 43개 중 43개 카운터를 매핑했습니다. 별도의 입력 128 / 출력 16 실행에서 748개 커널의 prefill/decode 귀속을 확인했습니다. 세션 자동 종료와 활성 세션 없음까지 확인했습니다. 데스크톱·390px 모바일 화면에서 브라우저 오류와 가로 넘침이 없음을 확인했습니다.
 
