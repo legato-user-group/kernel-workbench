@@ -1,0 +1,62 @@
+"""Colab-side orchestration. Always produces a downloadable bundle on profiler failures."""
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tarfile
+from pathlib import Path
+
+root=Path(sys.argv[1]); os.chdir(root)
+status={'warnings':[]}
+def call(args, output=None):
+    proc=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+    if output: Path(output).write_text(proc.stdout)
+    if proc.returncode: status['warnings'].append(f'{args[0]} failed ({proc.returncode}): {proc.stdout[-1200:]}')
+    return proc
+try:
+    # Resolve existing tool locations before installing anything in the ephemeral VM.
+    for name, pattern in [('nsys','/opt/nvidia/nsight-systems/*/bin/nsys'),('ncu','/usr/local/cuda*/nsight-compute*/ncu')]:
+        if not shutil.which(name):
+            import glob
+            choices=sorted(glob.glob(pattern))
+            if choices: os.environ['PATH']=str(Path(choices[-1]).parent)+':'+os.environ['PATH']
+    if not shutil.which('nsys') or not shutil.which('ncu'):
+        call(['apt-get','update','-qq'],'apt-update.log')
+        # NVIDIA CUDA repository on Colab publishes versioned profiler packages.
+        packages=subprocess.run(['apt-cache','pkgnames'],capture_output=True,text=True).stdout.splitlines()
+        for tool,prefix in [('nsys','nsight-systems-'),('ncu','nsight-compute-')]:
+            options=sorted(p for p in packages if p.startswith(prefix) and p[len(prefix):len(prefix)+1].isdigit())
+            if not shutil.which(tool) and options:
+                call(['apt-get','install','-y',options[-1]],tool+'-install.log')
+    entry=[sys.executable,'remote_entry.py','config.json','runner.py','meta.json']
+    status['tools']={tool:call([tool,'--version']).stdout if shutil.which(tool) else 'unavailable' for tool in ('nsys','ncu')}
+    if shutil.which('nsys'):
+        trace=call(['nsys','profile','--trace=cuda,nvtx','--sample=none','--cpuctxsw=none','--force-overwrite=true','-o','trace',*entry],'nsys.log')
+        if Path('trace.nsys-rep').exists():
+            call(['nsys','export','--type=sqlite','--force-overwrite=true','--output=trace.sqlite','trace.nsys-rep'],'nsys-export.log')
+    if not Path('meta.json').exists():
+        call(entry,'runner.log')
+    if shutil.which('ncu'):
+        query=call(['ncu','--query-metrics','--query-metrics-mode','base'],'available-metrics.txt').stdout
+        wanted=['dram__bytes_read.sum','dram__bytes_write.sum']
+        for prefix in ('f','d'):
+            wanted += [f'smsp__sass_thread_inst_executed_op_{prefix}{op}_pred_on.sum' for op in ('add','mul','fma')]
+        wanted += [f'sm__ops_path_tensor_src_{kind}_dst_fp32.sum' for kind in ('bf16','fp16','tf32')]
+        wanted=[m for m in wanted if m.rsplit('.',1)[0] in query]
+        status['requested_metrics']=wanted
+        if wanted:
+            entry[-1]='ncu-meta.json'
+            call(['ncu','--nvtx','--nvtx-include','inference/','--replay-mode','application',
+                  '--cache-control','none','--clock-control','none','--metrics',','.join(wanted),
+                  '--force-overwrite','-o','counters',*entry],'ncu.log')
+            if Path('counters.ncu-rep').exists():
+                call(['ncu','--import','counters.ncu-rep','--page','raw','--csv','--print-units','base','--rename-kernels','off'],'counters.csv')
+    if not Path('meta.json').exists(): raise RuntimeError('Runner did not produce metadata; inspect runner/nsys logs')
+except Exception as exc:
+    status['warnings'].append(str(exc))
+finally:
+    Path('status.json').write_text(json.dumps(status))
+    with tarfile.open('artifacts.tar.gz','w:gz') as archive:
+        for p in sorted(root.iterdir()):
+            if p.name != 'artifacts.tar.gz' and p.is_file(): archive.add(p,arcname=p.name)
