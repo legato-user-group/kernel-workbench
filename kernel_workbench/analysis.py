@@ -19,6 +19,11 @@ PEAKS = {'fp32': 19.5e12, 'fp64': 9.7e12, 'bf16_tensor': 312e12,
 
 def hardware(name):
     key = name.upper().removeprefix('NVIDIA ').replace(' ', '-')
+    if key in ('T4', 'TESLA-T4'):
+        return {'name': name, 'bandwidth': 300e9, 'peaks': {'fp32': 8.1e12, 'fp16_tensor': 65e12},
+                'source': 'NVIDIA T4 datasheet; theoretical, not measured ceilings',
+                'source_url': 'https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet-951643.pdf',
+                'supported': True}
     bw = A100.get(key)
     return {'name': name, 'bandwidth': bw, 'peaks': PEAKS if bw else {},
             'source': 'NVIDIA A100 dense datasheet', 'supported': bool(bw)}
@@ -161,11 +166,11 @@ def analyze(meta, kernels, ncu=None, baseline=None):
         f = sum(sum(k['flops'].values()) for k in kernels)
         d = sum(k['bytes'] for k in kernels)
         point = {'flops': f, 'bytes': d, 'source': 'measured', 'scope': 'all profiled kernels'}
-    elif meta.get('estimates'):
+    elif meta.get('estimates') and not meta.get('phase_estimate_reasons'):
         f = sum(sum(o['flops'].values()) for o in meta['estimates'])
         d = sum(o['bytes'] for o in meta['estimates'])
         point = {'flops': f, 'bytes': d, 'source': 'estimated',
-                 'scope': 'runner modeled operations; logical tensor traffic, not measured DRAM'}
+                 'scope': meta.get('estimate_scope', 'runner modeled operations; logical tensor traffic, not measured DRAM')}
     if point:
         point['timing_source'] = timings['source']
         point['intensity'] = point['flops'] / point['bytes'] if point['bytes'] else None
@@ -176,7 +181,29 @@ def analyze(meta, kernels, ncu=None, baseline=None):
             'kernels': kernels, 'estimates': estimates, 'steps': meta.get('steps', []),
             'coverage': {'measured': sum(k['source'] == 'measured' for k in kernels), 'total': len(kernels)},
             'warnings': meta.get('warnings', []) + ([timing_warning] if timing_warning else []) + ([] if matched else ['NCU counters unavailable or cross-run kernel sequence mismatch.']),
-            'versions': meta.get('versions', {})})
+            'versions': meta.get('versions', {}),
+            **{key: meta[key] for key in ('runner_id', 'kernel_plan', 'estimate_scope', 'analysis_notes', 'phase_estimate_reasons')
+               if key in meta}})
+
+
+def display_analysis(result):
+    """Normalize display metadata without changing saved timing/kernel evidence."""
+    result = dict(result)
+    hw = {**hardware(result['hardware']['name']), **result['hardware']}
+    result['hardware'] = hw
+    result['estimates'] = [{**e, **bounds(e['flops'], e['bytes'], hw), 'source': 'estimated'}
+                           for e in result.get('estimates', [])]
+    phases = {e['phase'] for e in result['estimates']}
+    if result.get('point') is None and phases == {'prefill', 'decode'}:
+        f = sum(sum(e['flops'].values()) for e in result['estimates'])
+        traffic = sum(e['bytes'] for e in result['estimates'])
+        duration = result['timings']['total_ms']
+        if f > 0 and traffic > 0 and duration > 0:
+            result['point'] = {'flops': f, 'bytes': traffic, 'source': 'estimated',
+                               'scope': result.get('estimate_scope', 'modeled operations; logical traffic'),
+                               'timing_source': result['timings'].get('source'),
+                               'intensity': f/traffic, 'tflops': f/(duration/1000)/1e12}
+    return result
 
 
 def with_phase_points(result):
@@ -192,6 +219,8 @@ def with_phase_points(result):
             rows, source, scope = kernels, 'measured', f'{phase} profiled kernels'
         elif estimates:
             rows, source, scope = estimates, 'estimated', f'{phase} modeled operations; logical tensor traffic, not measured DRAM'
+            if result.get('estimate_scope'):
+                scope += '; ' + result['estimate_scope']
         else:
             rows = []
         if rows and duration is not None and duration > 0:
@@ -207,6 +236,8 @@ def with_phase_points(result):
         elif not kernels and not estimates:
             reasons[phase] = ('not_executed' if phase == 'decode' and result['config'].get('output_tokens') == 1
                               else 'missing_data')
+            if result.get('phase_estimate_reasons', {}).get(phase):
+                reasons[phase] = result['phase_estimate_reasons'][phase]
         elif duration is None or duration <= 0:
             reasons[phase] = 'missing_duration'
         else:

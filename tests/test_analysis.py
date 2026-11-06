@@ -16,6 +16,14 @@ def test_bounds_and_units():
     assert bounds({'fp32':1},1,hardware('MIG A100'))['lower_ms'] is None
 
 
+def test_t4_roofline_uses_fp16_and_has_no_bf16_ceiling():
+    hw = hardware('Tesla T4')
+    assert hw['bandwidth'] == 300e9 and hw['peaks']['fp16_tensor'] == 65e12
+    assert 'bf16_tensor' not in hw['peaks']
+    assert bounds({'fp16_tensor': 65e9}, 1, hw)['compute_ms'] == pytest.approx(1)
+    assert bounds({'bf16_tensor': 1}, 1, hw)['bound'] == 'unknown'
+
+
 def test_launch_side_attribution(tmp_path):
     path=tmp_path/'trace.sqlite'; db=sqlite3.connect(path)
     db.executescript('''CREATE TABLE StringIds(id INTEGER,value TEXT);

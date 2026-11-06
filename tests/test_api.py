@@ -14,7 +14,9 @@ def test_api_is_result_store_only(tmp_path,monkeypatch):
     with client:
         assert client.get('/').status_code==200
         assert client.get('/api/health').json()['mode']=='result_store'
-        assert client.get('/api/guide').status_code==200
+        guide=client.get('/api/guide')
+        assert guide.status_code==200
+        assert guide.text==(service.ROOT/'README.md').read_text()
         assert client.get('/api/runs').json()==[]
         assert client.post('/api/runs',json={'runner':'tiny_decoder'}).status_code==422
         assert client.post('/api/runs',json={},headers={'origin':'https://untrusted.example'}).status_code==403
@@ -36,3 +38,27 @@ def test_legacy_results_remain_readable(tmp_path,monkeypatch):
     assert len(client.get('/api/runs').json())==1
     (directory/'job.json').unlink()
     assert client.get('/api/runs').json()==[]
+
+
+def test_source_analysis_enriches_display_without_rewriting_measurement(tmp_path, monkeypatch):
+    client = isolated(tmp_path, monkeypatch)
+    raw = json.load(open('kernel_workbench/static/example.json'))
+    raw['hardware'] = {'name': 'NVIDIA A100-SXM4-80GB'}
+    raw['kernels'], raw['estimates'], raw['point'] = [], [], None
+    assert client.post('/api/runs', json={'id':'observed','result':raw}).status_code == 201
+    original = (tmp_path/'observed/result.json').read_bytes()
+    analysis = {'runner_id':'test_runner','model':{'name':raw['model']['name'],'children':[{'id':'head','label':'LM head'}]},
+                'estimates':[{'module':'head','phase':'prefill','flops':{'bf16_tensor':1000},'bytes':100}],
+                'kernel_plan':[], 'estimate_scope':'projection subset only'}
+    path = '/api/runs/observed/artifacts/analysis.json'
+    assert client.put(path, json=analysis).status_code == 201
+    displayed = client.get('/api/runs/observed/result').json()
+    assert displayed['runner_id'] == 'test_runner'
+    assert displayed['hardware']['bandwidth'] == 2039e9
+    assert displayed['phase_points']['prefill']['source'] == 'estimated'
+    assert displayed['timings'] == raw['timings'] and displayed['kernels'] == []
+    assert displayed['point'] is None
+    assert client.get('/api/runs').json()[0]['runner_id'] == 'test_runner'
+    assert client.put(path, json={**analysis, 'timings':{'total_ms':1}}).status_code == 422
+    assert client.get(path).json() == analysis
+    assert (tmp_path/'observed/result.json').read_bytes() == original

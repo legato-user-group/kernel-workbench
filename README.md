@@ -1,59 +1,97 @@
 # Kernel Workbench
 
-여러 GPU 실행 환경에서 코딩 에이전트가 수집한 결과를 저장·시각화하는 HTTP API와 로컬 대시보드입니다. 모델 구조, prefill/decode, 전체 roofline 위치, 커널별 compute/memory 병목과 이론적 하한을 연결합니다.
+LLM 추론 실험의 원시 데이터를 읽어 모델 구조, prefill·decode 성능, 정확성 검증과 roofline을 보여주는 로컬 대시보드입니다. 실험 실행은 코딩 에이전트가 관리하고, 웹앱은 결과 저장과 조회를 담당합니다.
 
 ## 시작
 
-대시보드는 Python 3.12+와 `uv`만 있으면 실행됩니다. GPU와 원격 CLI 인증은 코딩 에이전트의 실행 환경에서 준비합니다. 기본 수집 설정은 A100이며 Colab, SSH GPU 서버, 클라우드·컨테이너 CLI를 사용할 수 있습니다.
+대시보드에는 GPU가 필요하지 않습니다. Python 3.12+와 `uv`로 실행합니다.
 
 ```sh
 uv sync --group dev
 uv run python -m kernel_workbench api
 ```
 
-브라우저: http://127.0.0.1:8765 · API 문서: http://127.0.0.1:8765/docs
+- 대시보드: http://127.0.0.1:8765
+- API 문서: http://127.0.0.1:8765/docs
 
-화면 검증용 예제가 기본 제공됩니다. 예제는 실제 GPU 측정값이 아니며 화면에서 명확히 표시합니다. 로컬 전용이며 외부 호스팅은 하지 않습니다.
+`experiments/`에 원시 결과가 있으면 자동으로 표시합니다. 별도 업로드나 요약 파일 생성은 필요하지 않습니다. 화면 검증용 합성 예제도 제공하며 실제 측정값과 구분합니다.
 
-## 코딩 에이전트 워크플로
+## 프로젝트 구조
 
-**코딩 에이전트 → GPU 환경의 CLI 실행·출력 확인 → 결과 분석·취합 → 대시보드 업로드** 구조입니다. 웹앱은 결과 저장과 조회만 담당합니다. 프로세스 실행, GPU 할당·종료, runner 등록, 작업 시작·취소 기능은 웹앱에 없습니다.
-
-전체 명령과 업로드 예제는 [AGENT_API.md](AGENT_API.md)에 있습니다. `GET /api/guide`로 같은 가이드를 읽을 수 있습니다.
-
-1. 에이전트가 runner와 설정을 작성합니다. `prepare` CLI로 전송 파일을 만들 수 있습니다.
-2. 에이전트가 Colab CLI, SSH, 컨테이너·클라우드 CLI 중 환경에 맞는 도구를 직접 호출하고 출력·오류를 확인합니다.
-3. `analyze` CLI 또는 에이전트 코드가 로컬에서 원본 보고서를 분석합니다.
-4. 에이전트가 분석 요약과 결과 JSON을 `POST /api/runs`에 업로드합니다.
-5. 대시보드가 업로드된 결과를 표시합니다.
-
-```sh
-uv run python -m kernel_workbench prepare --runner runners/tiny_decoder.py --output /tmp/tiny-collection --remote-dir /tmp/tiny-measure
-# 에이전트에서 GPU 환경의 CLI로 실행하고 artifacts.tar.gz를 회수한 다음:
-uv run python -m kernel_workbench analyze --artifacts /tmp/tiny-collection/artifacts.tar.gz --output /tmp/tiny-collection/result.json
+```text
+models/                         모델·커널 구현과 공통 측정 함수
+  qwen3_5/                      infer-opt에서 가져온 Qwen3.5 구현과 평가 도구
+  checkpoints/                  다운로드한 weight
+  cache/                        모델·컴파일 캐시와 기준 logits
+experiments/<실험명>/
+  config.json                   모델·GPU·입력 길이·측정 조건
+  <날짜>/                       실행 manifest와 원시 결과
+    results/                    계약·환경·입력·정확성·시간 표본
+scripts/                        재사용하는 실행·요약·조회 도구
+kernel_workbench/               원시 데이터 해석·API·대시보드
 ```
 
-서버는 실행 환경이나 CLI 종류를 알 필요가 없고, 원격 인증도 보유하지 않습니다. 원격 실행 시간 제한, 중단, 세션 정리는 에이전트가 관리합니다. 기존 자동 실행용 `run/register/cancel/recover` 명령과 시작·취소 API는 제거했습니다. 기존 `.runs/` 결과와 과거 에이전트 기록은 보존합니다.
+실험별 Python 실행 파일을 만들지 않고 공통 구현에 설정을 전달합니다. 입력 길이가 다르면 별도 실험 설정으로 구분합니다. Weight와 캐시는 Git에서 제외합니다. 개발 원칙은 [AGENTS.md](AGENTS.md)에 있습니다.
 
-## Runner와 결과
+## 실험 실행
 
-[runners/tiny_decoder.py](runners/tiny_decoder.py)는 self-contained runner 예제입니다. 필요한 GPU 라이브러리와 모델 가중치는 에이전트가 실행 환경에서 준비합니다.
+현재 설정은 [Qwen3.5-0.8B · prose 1024토큰](experiments/qwen35_08b_prose_1024/config.json)입니다.
 
-- `describe(config) -> dict`: 모델 이름과 `children` 구조를 반환합니다.
-- `run(config, trace) -> dict`: 설정·GPU·전체 및 단계별 시간·버전·비용 추정치를 반환합니다.
-- NVTX의 `inference`, `phase:prefill/decode`, `module:...`, `step:...` 구간으로 모델과 커널을 연결합니다.
-- 추론 타이머는 모델 로딩·워밍업을 제외하고 GPU 완료를 동기화해야 합니다.
+| 조건 | 설정 |
+|---|---|
+| 체크포인트 | 공식 `Qwen/Qwen3.5-0.8B`, revision 고정 |
+| 실행 | T4 · FP16 · MTP 꺼짐 · 양자화 없음 · CUDA Graph decode |
+| 작업량 | batch 1 · 입력 1024토큰 · 출력 256토큰 · greedy · EOS 조기 종료 없음 |
+| 반복 | 구간별 warmup 3회 + 측정 10회 |
+| 정확성 기준 | HF BF16 · CPU · cached eager · teacher forcing |
 
-예제는 4개 레이어, hidden 256, head 4, vocab 4096의 synthetic decoder입니다. 출력 16토큰 중 첫 토큰은 prefill에서 생성되어 decode 호출은 15회입니다.
+GPU 환경에는 PyTorch·Triton과 Transformers, safetensors, huggingface_hub, pydantic이 필요합니다. 완료한 T4 실험은 Transformers 5.22.2를 사용했습니다. 대시보드용 의존성과 GPU 실행 환경은 별도로 준비합니다.
 
-업로드 형식은 `{"id":"고유-ID", "summary":"에이전트의 분석", "result":{...}}`입니다. `id`는 생략할 수 있습니다. `result`는 `analyze`가 생성하는 정규화 JSON이며 모델 구조·설정·하드웨어·시간·커널·비용 추정·수집 출처를 포함합니다. `.runs/<ID>/result.json`과 `job.json`에 원자적으로 저장하며 기존 ID는 덮어쓰지 않습니다. `KERNEL_WORKBENCH_DATA`로 저장 위치를 변경할 수 있습니다. 기존 `KERNEL_OPT_DATA`도 호환 설정으로 읽습니다.
+이미 모델을 준비한 GPU 환경에서는 [공통 평가 CLI](scripts/evaluate.py)를 실행합니다.
 
-## 최적화 실험 이력
+```sh
+python scripts/evaluate.py \
+  --experiment experiments/qwen35_08b_prose_1024/config.json \
+  --models models/checkpoints/evaluation_models.json
+```
 
-대시보드의 실험 이력에서 시리즈별로 시도를 모아 보고, 변경 내용·가설·코드 버전·실행 환경·정확성 검증·해석·다음 시도를 확인합니다. 기준·후보 결과를 열면 해당 측정의 모델 구조, roofline, 커널과 원본 파일을 볼 수 있습니다.
+모델 manifest의 `reference`, `candidate`에는 각각 `repo`, `revision`, 로컬 `path`, 파일별 SHA-256을 담은 `files`를 기록합니다. 원본 체크포인트 실험의 두 역할은 같은 모델 ID·revision을 사용합니다.
 
-에이전트는 측정 결과를 먼저 업로드한 뒤 `POST /api/experiments`로 `baseline_run_id`와 `candidate_run_id`를 연결합니다. 실험은 `.runs/experiments/<ID>/experiment.json`에 저장하며 기존 ID를 덮어쓰지 않습니다. 성능이 떨어진 시도도 그대로 기록합니다. 컴파일·실행 실패로 결과가 없다면 `status: failed` 또는 `inconclusive`로 기록할 수 있습니다.
+기본 결과 경로는 설정 폴더 아래 실행 환경의 현재 날짜입니다. 기존 결과가 있으면 새 `--output` 경로를 지정합니다. 실행 명령과 소스 hash만 확인하려면 별도 임시 경로에 `--prepare-only`를 사용합니다. 현재 원본 체크포인트 평가 경로는 `--resume`을 지원하지 않습니다.
 
-개선율은 완료된 실험에서 에이전트가 정확성 검증 통과를 기록하고, 두 실행의 모델 이름·GPU 이름·작업 설정과 독립 측정 출처가 맞을 때 계산합니다. runner 이름, GPU 선택 힌트, 워밍업·반복 횟수·시간 제한은 작업 설정 비교에서 제외합니다. 그 밖의 설정이 다르거나 프로파일링 중 시간만 있으면 전후 시간을 보존하고 개선율은 보류합니다. 양수는 시간 단축, 음수는 시간 증가이며 `배속 = 기준 시간 / 후보 시간`입니다. 과거 에이전트 응답·이벤트 파일은 보존하며 기존 조회 API로 읽을 수 있습니다.
+Colab 등 원격 GPU에서는 [공통 GPU 실행 도구](scripts/gpu_evaluate.py)를 재사용합니다. 소스 묶음 경로 `KWB_ARCHIVE`, 새 작업 폴더 `KWB_DIRECTORY`, 묶음 안의 설정 경로 `KWB_EXPERIMENT`를 환경 변수로 전달합니다. 이 도구는 실제 GPU를 확인하고 공개 체크포인트 다운로드, manifest 생성, 평가와 결과 압축을 수행합니다.
 
-기록 예제와 필드 설명은 [AGENT_API.md](AGENT_API.md#record-an-optimization-attempt)에 있습니다.
+에이전트가 GPU 할당, 의존성 설치, 소스 전송, 결과 회수와 세션 종료를 관리합니다. 회수한 데이터를 `experiments/<실험명>/<날짜>/`에 보관하면 대시보드에 반영됩니다.
+
+## 측정과 검증
+
+Prefill, 첫 token 준비, decode, 전체 생성을 각각 별도 pass에서 측정합니다. 모델 로딩·토큰화·cache reset·graph capture는 타이머 밖에 두고, 동기화한 wall time과 CUDA Event 시간을 ms 단위로 저장합니다. 대시보드는 전체 생성, prefill, decode 전체와 decode 토큰당 시간을 표시합니다.
+
+첫 출력 token은 prefill에서 나오므로 출력 256개 중 decode 작업량은 **255개**입니다. `decode ms/token = decode 전체 ms / 255`이며 구간별 중앙값을 더해 전체 생성 시간을 만들지 않습니다.
+
+정확성은 같은 HF 후속 token을 teacher-force하여 prefill 1개와 decode 255개 위치의 전체 vocabulary logits를 비교합니다. 현재 gate는 prefill KL·decode 평균 KL 각각 ≤ 0.005, HF margin > 0.5인 argmax 불일치 0개, finite logits와 올바른 cache 위치입니다. Reset 재현성과 측정 표본의 출력 안정성도 확인합니다. Allclose 오차는 진단값이며 state 값 동등성은 별도 미검증입니다.
+
+HF BF16 CPU 시간은 성능 결과에 포함하지 않습니다. 비교 실험의 배속은 정확성 통과, 같은 작업 조건과 독립 측정 표본이 갖춰진 지표에만 계산합니다. 단일 엔진 실험에는 배속을 표시하지 않습니다.
+
+모델 구조와 커널 구현 경로는 소스·체크포인트 설정에서 읽습니다. Roofline의 모델 연산·논리적 트래픽 추정치와 데이터시트 상한은 실측 커널 시간·DRAM 카운터와 구분합니다.
+
+## 결과 조회
+
+```sh
+# 원시 데이터에서 report.json과 report.md를 명시적으로 생성
+uv run python scripts/summarize.py experiments/qwen35_08b_prose_1024/2026-11-06
+
+# 대시보드에서 읽을 측정·실험 수와 해석 오류 확인
+uv run python scripts/inspect_results.py experiments
+```
+
+대시보드는 원시 JSON을 직접 읽으며 조회 중 결과 파일을 쓰지 않습니다. 선택한 runner의 실험에서 가설·결과 해석과 정확성 표를 확인하고 모델 구조, 커널 트리, roofline과 원본 데이터를 함께 볼 수 있습니다.
+
+완료한 [0.8B T4 실험](experiments/qwen35_08b_prose_1024/2026-11-06/report.md)의 10회 wall 중앙값은 prefill **175.248 ms**, decode **15.054 ms/token**, 전체 생성 **4138.976 ms**입니다. HF BF16 정확성 gate와 reset 검증을 통과했으며 256개 위치 top-1 일치율은 100%였습니다. Nsight 커널 프로파일과 FLOPs·DRAM 카운터는 수집하지 않았습니다.
+
+## 개발 검사
+
+```sh
+.venv/bin/pytest -q
+node --check kernel_workbench/static/app.js
+```

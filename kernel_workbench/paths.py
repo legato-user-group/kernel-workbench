@@ -3,4 +3,4 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = Path(os.environ.get('KERNEL_WORKBENCH_DATA', os.environ.get('KERNEL_OPT_DATA', ROOT / '.runs')))
+DATA = Path(os.environ.get('KERNEL_WORKBENCH_DATA', os.environ.get('KERNEL_OPT_DATA', ROOT / 'experiments')))

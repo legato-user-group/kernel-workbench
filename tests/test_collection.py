@@ -25,6 +25,26 @@ def test_prepare_default_remote_path_is_transport_independent(tmp_path):
     assert not (tmp_path/'bad').exists()
 
 
+def test_prepare_bundles_declared_packages_without_importing_runner(tmp_path):
+    runner = tmp_path/'runner.py'
+    runner.write_text("raise RuntimeError('must not import')")
+    package = tmp_path/'_vendor'/'custom_kernel'
+    package.mkdir(parents=True)
+    (package/'__init__.py').write_text('KERNEL_VERSION = 1')
+    cache = package/'__pycache__'
+    cache.mkdir()
+    (cache/'module.pyc').write_bytes(b'not a source file')
+    runner.with_suffix('.bundle.json').write_text(json.dumps({'directories':['_vendor']}))
+    result = prepare(runner, {}, tmp_path/'bundle')
+    with tarfile.open(result['source_archive']) as archive:
+        assert archive.extractfile('_vendor/custom_kernel/__init__.py').read() == b'KERNEL_VERSION = 1'
+        assert not any('__pycache__' in name for name in archive.getnames())
+    runner.with_suffix('.bundle.json').write_text(json.dumps({'directories':['../outside']}))
+    with pytest.raises(ValueError, match='relative directory'):
+        prepare(runner, {}, tmp_path/'unsafe')
+    assert not (tmp_path/'unsafe').exists()
+
+
 def test_gpu_host_collector_streams_logs_without_installing_tools(tmp_path,monkeypatch,capsys):
     import glob
     import runpy

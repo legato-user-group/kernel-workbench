@@ -44,8 +44,9 @@ class ExperimentUpload(BaseModel):
 
 
 class ExperimentStore:
-    def __init__(self, directory=None):
-        self.directory = Path(directory) if directory is not None else DATA / 'experiments'
+    def __init__(self, directory=None, raw_repository=None):
+        self.directory = Path(directory) if directory is not None else DATA / 'attempts'
+        self.raw=raw_repository
 
     def path(self, ident):
         if not re.fullmatch(ID_PATTERN, ident):
@@ -53,18 +54,22 @@ class ExperimentStore:
         return self.directory / ident
 
     def get(self, ident):
+        if self.raw:
+            try:return self.raw.attempt(ident)
+            except FileNotFoundError:pass
         return json.loads((self.path(ident) / 'experiment.json').read_text())
 
     def records(self, series=None):
         records = [self.get(path.parent.name) for path in self.directory.glob('*/experiment.json')
                    if not path.parent.name.startswith('.')]
+        if self.raw:records.extend(self.raw.attempts())
         return sorted([r for r in records if series is None or r['series'] == series],
                       key=lambda r: r['created_at'], reverse=True)
 
     def save(self, upload):
         ident = upload.id or uuid.uuid4().hex[:12]
         target = self.path(ident)
-        if target.exists():
+        if target.exists() or (self.raw and any(r['id']==ident for r in self.raw.attempts())):
             raise FileExistsError('Experiment id already exists')
         record = {**upload.model_dump(), 'id': ident, 'created_at': time.time()}
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -93,12 +98,13 @@ def compare(record, reports):
             continue
         try:
             reports.get(ident)
-            data = json.loads((reports.path(ident) / 'result.json').read_text())
+            data = reports.result(ident)
         except (ValueError, FileNotFoundError):
             reasons.append(role + '_unavailable')
             measurements[role] = None
             continue
         measurements[role] = {'run_id': ident, 'timings': data['timings'],
+                              'runner_id': data.get('runner_id', data['config']['runner']),
                               'config': data['config'], 'hardware': data['hardware'],
                               'model_name': data['model']['name']}
         if data['timings'].get('source') != 'unprofiled':
@@ -119,12 +125,19 @@ def compare(record, reports):
         reasons.append('correctness_not_passed')
     if record['status'] != 'completed':
         reasons.append('attempt_not_completed')
-    speedup, reduction = {}, {}
+    speedup, reduction, metric_reasons = {}, {}, {}
     if not reasons:
         for key in ('total_ms', 'prefill', 'decode'):
+            incomplete = [role for role in ('baseline', 'candidate')
+                          if (timings := measurements[role]['timings']).get('expected_samples') is not None
+                          and timings['sample_counts'].get(key) != timings['expected_samples']]
+            if incomplete:
+                metric_reasons[key] = [role + '_incomplete_samples' for role in incomplete]
+                continue
             old, new = baseline['timings'].get(key), candidate['timings'].get(key)
             if old is not None and new is not None and old > 0 and new > 0:
                 speedup[key] = old / new
                 reduction[key] = (old - new) / old * 100
     return {'eligible': not reasons, 'reasons': reasons, **measurements,
-            'speedup': speedup, 'latency_reduction_pct': reduction}
+            'speedup': speedup, 'latency_reduction_pct': reduction,
+            'metric_reasons': metric_reasons}

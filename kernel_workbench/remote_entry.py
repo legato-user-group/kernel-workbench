@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 class Trace:
+    independent_timing = False
     @contextmanager
     def range(self, label):
         import torch
@@ -22,6 +23,7 @@ class Trace:
 
 class NoTrace:
     """Same runner interface with no profiler or NVTX calls."""
+    independent_timing = True
     def range(self, label): return nullcontext()
     def phase(self, name): return nullcontext()
     def module(self, name): return nullcontext()
@@ -30,11 +32,17 @@ class NoTrace:
 
 def collect_baseline(runner, config):
     samples = []
+    warmups = []
+    persistent = []
     metadata = None
     repeats = config.get('baseline_repeats', 5)
     for _ in range(repeats):
         result = runner.run(dict(config), NoTrace())
         sample = {'total_ms': result['total_ms'], 'phase_ms': dict(result['phase_ms'])}
+        if 'evaluation' in result:
+            sample['evaluation'] = result['evaluation']
+        warmups.append(result.get('warmup_iterations', config.get('warmup', 1)))
+        persistent.append(result.get('prepared_model_persistent', False))
         values = [sample['total_ms'], *[sample['phase_ms'][p] for p in ('prefill', 'decode')]]
         if any(not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in values) or values[0] <= 0:
             raise ValueError('Baseline runner must return finite synchronized inference timings')
@@ -46,7 +54,9 @@ def collect_baseline(runner, config):
             'samples': samples, 'total_ms': statistics.median(s['total_ms'] for s in samples),
             'phase_ms': {p: statistics.median(s['phase_ms'][p] for s in samples) for p in ('prefill', 'decode')},
             'config': config, 'gpu': metadata['gpu'], 'versions': metadata.get('versions', {}),
-            'warmup_per_sample': config.get('warmup', 1), 'runner_reinitialized_per_sample': True}
+            'warmup_per_sample': warmups[0] if len(set(warmups)) == 1 else None,
+            'warmup_counts': warmups, 'runner_reinitialized_per_sample': not all(persistent),
+            'correctness': metadata.get('correctness')}
 
 
 if __name__ == '__main__':

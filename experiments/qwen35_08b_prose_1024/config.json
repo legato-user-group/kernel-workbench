@@ -1,0 +1,18 @@
+{
+  "name": "qwen35_08b_prose_1024",
+  "model": "qwen3_5",
+  "gpu": "T4",
+  "dtype": "fp16",
+  "batch": 1,
+  "input_tokens": 1024,
+  "output_tokens": 256,
+  "warmup": 3,
+  "baseline_repeats": 10,
+  "runner_options": {
+    "suite": "checkpoint_evaluation",
+    "checkpoint": "Qwen/Qwen3.5-0.8B",
+    "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "reference_device": "cpu",
+    "kernels": "torch"
+  }
+}

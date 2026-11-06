@@ -12,7 +12,9 @@ def main():
         server = sub.add_parser(name)
         server.add_argument('--port', type=int, default=8765)
     prepare = sub.add_parser('prepare', help='Create source bundle and remote script, without running them')
-    prepare.add_argument('--runner', default=str(ROOT / 'runners/tiny_decoder.py'))
+    selection = prepare.add_mutually_exclusive_group()
+    selection.add_argument('--runner')
+    selection.add_argument('--experiment')
     prepare.add_argument('--config')
     prepare.add_argument('--output', required=True)
     prepare.add_argument('--remote-dir')
@@ -25,11 +27,15 @@ def main():
         uvicorn.run('kernel_workbench.app:app', host='127.0.0.1', port=args.port)
         return
     try:
-        from .collection import prepare as prepare_files, analyze_artifacts
+        from .collection import prepare as prepare_files, prepare_experiment, analyze_artifacts
         if args.command == 'prepare':
             config = json.loads(Path(args.config).read_text()) if args.config else {}
-            config.setdefault('runner', Path(args.runner).stem)
-            value = prepare_files(args.runner, config, args.output, args.remote_dir)
+            if args.runner:
+                config.setdefault('runner', Path(args.runner).stem)
+                value = prepare_files(args.runner, config, args.output, args.remote_dir)
+            else:
+                definition = args.experiment or ROOT / 'experiments/tiny_decoder/config.json'
+                value = prepare_experiment(definition, args.output, args.remote_dir, config)
         else:
             value = analyze_artifacts(args.artifacts)
             output = Path(args.output)

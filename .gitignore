@@ -1,5 +1,16 @@
 .venv/
-.runs/
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# Historical one-off launch/control scripts, kept locally for provenance.
+/scripts/archive/
+
+# Local model checkpoints/caches and experiment results.
+/models/checkpoints/
+/models/cache/
+# /experiments/*/*
+*.safetensors
+*.gguf
+*.pt
+*.pth

@@ -4,15 +4,17 @@ import uuid
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from .paths import ROOT
-from .reports import ReportStore, ReportUpload, ARTIFACT_NAMES
+from .paths import ROOT, DATA
+from .raw_experiments import RawExperiments
+from .reports import ReportStore, ReportUpload, Report, AnalysisSupplement, ARTIFACT_NAMES
 from .agents import AgentHistory
 from .experiments import ExperimentStore, ExperimentUpload, compare
-from .analysis import with_phase_points
+from .analysis import with_phase_points, display_analysis
 
-store = ReportStore()
+raw = RawExperiments(DATA)
+store = ReportStore(raw_repository=raw)
 agents = AgentHistory()
-experiments = ExperimentStore()
+experiments = ExperimentStore(raw_repository=raw)
 app = FastAPI(title='Kernel Workbench Results API')
 
 
@@ -26,13 +28,13 @@ async def local_mutations(request: Request, call_next):
 
 @app.get('/api/health')
 def health():
-    return {'status': 'ok', 'execution': 'agent_owned', 'mode': 'result_store',
+    return {'status': 'ok', 'execution': 'agent_owned', 'mode': 'result_store', 'data_source':'experiments_raw',
             'openapi_url': '/openapi.json', 'guide_url': '/api/guide'}
 
 
 @app.get('/api/guide')
 def guide():
-    return FileResponse(ROOT / 'AGENT_API.md', media_type='text/markdown')
+    return FileResponse(ROOT / 'README.md', media_type='text/markdown')
 
 
 @app.get('/api/runs')
@@ -67,10 +69,9 @@ def get(ident: str):
 @app.get('/api/runs/{ident}/result')
 def result(ident: str):
     record(ident)
-    path = store.path(ident) / 'result.json'
-    if not path.exists():
+    if not store.has_result(ident):
         raise HTTPException(409, 'This legacy run has no saved result')
-    data = with_phase_points(json.loads(path.read_text()))
+    data = with_phase_points(display_analysis(store.result(ident)))
     data['artifacts'] = record(ident)['artifacts']
     return data
 
@@ -78,6 +79,8 @@ def result(ident: str):
 @app.put('/api/runs/{ident}/artifacts/{name}', status_code=201)
 async def upload_artifact(ident: str, name: str, request: Request):
     record(ident)
+    if store.is_raw(ident):
+        raise HTTPException(409, 'Edit the source evidence under experiments/; derived reports are read-only')
     if name not in ARTIFACT_NAMES:
         raise HTTPException(422, 'Unsupported artifact name')
     directory = store.path(ident)
@@ -86,6 +89,14 @@ async def upload_artifact(ident: str, name: str, request: Request):
         with temp.open('wb') as output:
             async for chunk in request.stream():
                 output.write(chunk)
+        if name == 'analysis.json':
+            from pydantic import ValidationError
+            try:
+                supplemental = AnalysisSupplement(**json.loads(temp.read_text())).model_dump()
+                original = json.loads((directory / 'result.json').read_text())
+                Report(**{**original, **supplemental})
+            except (ValueError, TypeError, ValidationError) as error:
+                raise HTTPException(422, 'Invalid source analysis: ' + str(error))
         temp.replace(directory / name)
     finally:
         temp.unlink(missing_ok=True)
@@ -95,6 +106,11 @@ async def upload_artifact(ident: str, name: str, request: Request):
 @app.get('/api/runs/{ident}/artifacts/{name}')
 def artifact(ident: str, name: str):
     record(ident)
+    if store.is_raw(ident):
+        if name=='result.json':return JSONResponse(store.result(ident))
+        try:path=store.raw.artifact(ident,name)
+        except FileNotFoundError:raise HTTPException(404)
+        return FileResponse(path,filename=name)
     if name not in ARTIFACT_NAMES | {'result.json'}:
         raise HTTPException(404)
     path = store.path(ident) / name
@@ -118,7 +134,7 @@ def upload_experiment(upload: ExperimentUpload):
     for ident in (upload.baseline_run_id, upload.candidate_run_id):
         if ident:
             record(ident)
-            if not (store.path(ident) / 'result.json').is_file():
+            if not store.has_result(ident):
                 raise HTTPException(422, 'Linked run has no result')
     try:
         saved = experiments.save(upload)

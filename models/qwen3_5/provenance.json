@@ -1,0 +1,76 @@
+{
+  "source_repository": "/home/jake/infer-opt",
+  "source_revision": "faf3de5cf9f23c2ee2f29ec94ed80721609dc58f",
+  "adaptations": [
+    "Local import paths",
+    "Torch operator namespace to prevent collisions; arithmetic unchanged"
+  ],
+  "files": [
+    {
+      "path": "speculative.py",
+      "source": "infer_opt/speculative.py",
+      "source_sha256": "d92a866f23d7dd6296e6e48ea272186db16b258c283b6c3956782da30fc9c518",
+      "sha256": "7eb136fe1489a1f8d47e8ad43589cc8817e88f5e11a1b56eb0891e4451465670"
+    },
+    {
+      "path": "inductor_choices.py",
+      "source": "infer_opt/inductor_choices.py",
+      "source_sha256": "091a11a0ff80d2b2790f6c86e3639c4c04049743579dedda4cff4ee67322446b",
+      "sha256": "091a11a0ff80d2b2790f6c86e3639c4c04049743579dedda4cff4ee67322446b"
+    },
+    {
+      "path": "model.py",
+      "source": "infer_opt/qwen3_5.py",
+      "source_sha256": "0f1a87c2c45dbcdc9977dea81e8578fb172b86341b9eb5499618c6115c2f6f5a",
+      "sha256": "5e6c5b78a20fed65a4e9ab2e51c3409537f3ad3571f040069aae84ace612d774"
+    },
+    {
+      "path": "attention_kernels.py",
+      "source": "infer_opt/attention_kernels.py",
+      "source_sha256": "655eb74682227484b48fd3015cb116ff3ad98450e3cdcff5f5db14689b5485b6",
+      "sha256": "79f7552d17f93274b2173eac390cdf264c166821eb937f1014d47c64d52a3097"
+    },
+    {
+      "path": "nvfp4.py",
+      "source": "infer_opt/nvfp4.py",
+      "source_sha256": "7c1ddc0205987fe6e15a0baaa8dcec4dbdd3e880b9aa5789c3c83010c3f45f84",
+      "sha256": "b51d791b03f2db5a603fb26316df6f4aca926d85014f4b93ff0234260e782598"
+    },
+    {
+      "path": "quant.py",
+      "source": "infer_opt/quant.py",
+      "source_sha256": "6749885021fcbd0a8f03aac57b04e34fe6d5055ca79c76d5b5ce06e9ee416e1c",
+      "sha256": "fa1b602c4c00c203697ee39543b008f5778b5971fda20161b3fbc9fd859176cc"
+    },
+    {
+      "path": "quant_kernels.py",
+      "source": "infer_opt/quant_kernels.py",
+      "source_sha256": "7606a3740deaeb7fef446f4ea69ef5f09167b0f7c391ff20671f9a7598c86cbd",
+      "sha256": "acc7ce4be2366032684cb854640ee24ee8f5b426431930fa8b175e9c6c00c87d"
+    },
+    {
+      "path": "moe.py",
+      "source": "infer_opt/moe.py",
+      "source_sha256": "bb94899df1dbbbb305a93bdafd8ccb20e6362a1709b8a584aec89b8730eea29f",
+      "sha256": "4e02ad8a9334801d4f94c78967ee0a229ad11c676c23d9c1746f65fdf06bdf43"
+    },
+    {
+      "path": "moe_kernels.py",
+      "source": "infer_opt/moe_kernels.py",
+      "source_sha256": "caba7344d7d287cb2d49a39e7a96db7240f14f5cb622939c897206eb51e44b46",
+      "sha256": "caba7344d7d287cb2d49a39e7a96db7240f14f5cb622939c897206eb51e44b46"
+    },
+    {
+      "path": "gated_delta_kernels.py",
+      "source": "infer_opt/gated_delta_kernels.py",
+      "source_sha256": "cae95069223238b668f58ca793ada4388c1d18b20e3ac9e54ed11580f528142f",
+      "sha256": "75d801895bf0d8f6742be7d452361170bbf651976765831c91f6960fc2fde40b"
+    },
+    {
+      "path": "validation.py",
+      "source": "scripts/validate_qwen3_5_hf.py",
+      "source_sha256": "2dc56239e78024cf62b819c9915d128b25d7b93ec1e7351da80377de8426de86",
+      "sha256": "1e4c19cf1382e70e113e50345cd3587890b4c1ec5cc2e6d396192be19ae325be"
+    }
+  ]
+}
