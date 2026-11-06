@@ -1,7 +1,7 @@
 import json
 from fastapi.testclient import TestClient
-import kernel_dashboard.app as service
-from kernel_dashboard.reports import ReportStore
+import kernel_workbench.app as service
+from kernel_workbench.reports import ReportStore
 
 
 def isolated(tmp_path, monkeypatch):
@@ -25,7 +25,7 @@ def test_api_is_result_store_only(tmp_path,monkeypatch):
 
 
 def test_legacy_results_remain_readable(tmp_path,monkeypatch):
-    source=json.load(open('kernel_dashboard/static/example.json'))
+    source=json.load(open('kernel_workbench/static/example.json'))
     source.pop('phase_points');source.pop('phase_point_reasons')
     directory=tmp_path/'legacy';directory.mkdir()
     (directory/'result.json').write_text(json.dumps(source))

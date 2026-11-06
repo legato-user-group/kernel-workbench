@@ -1,7 +1,7 @@
 import json
 import sqlite3
 import pytest
-from kernel_dashboard.analysis import bounds,hardware,read_nsys,read_ncu,analyze,counters
+from kernel_workbench.analysis import bounds,hardware,read_nsys,read_ncu,analyze,counters
 
 
 def test_bounds_and_units():
@@ -43,7 +43,7 @@ def test_csv_and_fma(tmp_path):
 
 
 def test_mismatch_never_fabricates_kernel_counters():
-    meta=json.load(open('kernel_dashboard/static/example.json'))
+    meta=json.load(open('kernel_workbench/static/example.json'))
     source={'gpu':{'name':meta['hardware']['name']},'model':meta['model'],'config':meta['config'],
             'total_ms':9.4,'phase_ms':{'prefill':1.8,'decode':7.6},'estimates':meta['estimates']}
     k={**meta['kernels'][0],'source':'unavailable','flops':None,'bytes':None}
@@ -63,7 +63,7 @@ def test_wide_ncu_export(tmp_path):
 
 
 def test_phase_rooflines_use_phase_totals_and_phase_time():
-    from kernel_dashboard.analysis import with_phase_points
+    from kernel_workbench.analysis import with_phase_points
     result = {
         'point': {'source': 'measured'}, 'config': {'output_tokens': 3},
         'timings': {'total_ms': 12, 'prefill': 4, 'decode': 8},
@@ -82,7 +82,7 @@ def test_phase_rooflines_use_phase_totals_and_phase_time():
 
 
 def test_no_decode_is_explicit_even_with_sync_duration():
-    from kernel_dashboard.analysis import with_phase_points
+    from kernel_workbench.analysis import with_phase_points
     result={'point':None,'config':{'output_tokens':1},'timings':{'prefill':2,'decode':.02},'kernels':[], 'estimates':[]}
     result=with_phase_points(result)
     assert result['phase_points']['decode'] is None
@@ -90,7 +90,7 @@ def test_no_decode_is_explicit_even_with_sync_duration():
 
 
 def test_partial_phase_falls_back_without_mixing_counter_and_estimate():
-    from kernel_dashboard.analysis import with_phase_points
+    from kernel_workbench.analysis import with_phase_points
     result={'point':None,'config':{'output_tokens':2},'timings':{'prefill':1,'decode':2},
             'kernels':[{'phase':'decode','source':'measured','flops':{'fp32':9999},'bytes':9999},
                        {'phase':'decode','source':'partial','flops':None,'bytes':None}],
@@ -100,7 +100,7 @@ def test_partial_phase_falls_back_without_mixing_counter_and_estimate():
 
 
 def test_zero_traffic_phase_not_plotted():
-    from kernel_dashboard.analysis import with_phase_points
+    from kernel_workbench.analysis import with_phase_points
     result={'point':None,'config':{'output_tokens':2},'timings':{'prefill':1,'decode':2},'estimates':[],
             'kernels':[{'phase':'decode','source':'measured','flops':{'fp32':20},'bytes':0}]}
     assert with_phase_points(result)['phase_points']['decode'] is None

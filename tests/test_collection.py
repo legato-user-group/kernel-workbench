@@ -2,7 +2,7 @@ import json
 import tarfile
 from pathlib import Path
 import pytest
-from kernel_dashboard.collection import prepare, analyze_artifacts
+from kernel_workbench.collection import prepare, analyze_artifacts
 
 
 @pytest.mark.parametrize('remote',['/content/test-measure','/srv/gpu/jobs/test-measure'])
@@ -20,7 +20,7 @@ def test_prepare_does_not_import_or_execute_runner(tmp_path,remote):
 def test_prepare_default_remote_path_is_transport_independent(tmp_path):
     runner=tmp_path/'runner.py';runner.write_text('')
     result=prepare(runner,{},tmp_path/'prepared')
-    assert result['remote_directory'].startswith('/tmp/kernel-opt-')
+    assert result['remote_directory'].startswith('/tmp/kernel-workbench-')
     with pytest.raises(ValueError):prepare(runner,{},tmp_path/'bad','relative/work')
     assert not (tmp_path/'bad').exists()
 
@@ -30,7 +30,7 @@ def test_gpu_host_collector_streams_logs_without_installing_tools(tmp_path,monke
     import runpy
     import shutil
     import sys
-    bootstrap=Path('kernel_dashboard/bootstrap.py').resolve()
+    bootstrap=Path('kernel_workbench/bootstrap.py').resolve()
     (tmp_path/'remote_entry.py').write_text(
         "import pathlib,sys\nprint('runner output',flush=True)\n"
         "print('runner diagnostic',file=sys.stderr,flush=True)\n"
@@ -52,7 +52,7 @@ def test_gpu_host_collector_streams_logs_without_installing_tools(tmp_path,monke
 
 
 def test_agent_side_analysis_preserves_independent_timing(tmp_path):
-    fixture=json.load(open('kernel_dashboard/static/example.json'))
+    fixture=json.load(open('kernel_workbench/static/example.json'))
     config=fixture['config'];gpu={'name':fixture['hardware']['name']}
     meta={'config':config,'gpu':gpu,'model':fixture['model'],'total_ms':20,
           'phase_ms':{'prefill':5,'decode':15},'estimates':fixture['estimates'],'versions':{}}

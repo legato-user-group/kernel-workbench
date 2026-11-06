@@ -133,7 +133,7 @@ wheels = [
 ]
 
 [[package]]
-name = "kernel-opt-dashboard"
+name = "kernel-workbench"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

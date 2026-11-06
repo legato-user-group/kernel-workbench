@@ -1,6 +1,6 @@
 import json
 import pytest
-from kernel_dashboard import agents as module
+from kernel_workbench import agents as module
 
 
 def test_legacy_agent_history_is_read_only(tmp_path,monkeypatch):

@@ -28,7 +28,7 @@ def prepare(runner, config, output, remote_directory=None):
     if not runner.is_file() or runner.suffix != '.py':
         raise ValueError('Runner must be an existing Python file')
     output = Path(output).resolve()
-    remote = remote_directory or '/tmp/kernel-opt-' + uuid.uuid4().hex[:12]
+    remote = remote_directory or '/tmp/kernel-workbench-' + uuid.uuid4().hex[:12]
     remote_path = PurePosixPath(remote)
     if not remote_path.is_absolute() or remote_path == PurePosixPath('/') or '..' in remote_path.parts:
         raise ValueError('Remote directory must be an absolute POSIX working path')
@@ -39,8 +39,8 @@ def prepare(runner, config, output, remote_directory=None):
     archive_path = output / 'source.tar.gz'
     with tarfile.open(archive_path, 'w:gz') as archive:
         archive.add(runner, arcname='runner.py')
-        archive.add(ROOT / 'kernel_dashboard/remote_entry.py', arcname='remote_entry.py')
-        archive.add(ROOT / 'kernel_dashboard/bootstrap.py', arcname='bootstrap.py')
+        archive.add(ROOT / 'kernel_workbench/remote_entry.py', arcname='remote_entry.py')
+        archive.add(ROOT / 'kernel_workbench/bootstrap.py', arcname='bootstrap.py')
         archive.add(output / 'config.json', arcname='config.json')
     script = output / 'collect.py'
     script.write_text('import tarfile, pathlib, subprocess, sys\n'
@@ -85,7 +85,7 @@ def analyze_artifacts(path):
     path = Path(path)
     if path.is_dir():
         return analyze_directory(path)
-    with tempfile.TemporaryDirectory(prefix='kernel-opt-analysis-') as temp:
+    with tempfile.TemporaryDirectory(prefix='kernel-workbench-analysis-') as temp:
         with tarfile.open(path) as archive:
             archive.extractall(temp, filter='data')
         return analyze_directory(temp)

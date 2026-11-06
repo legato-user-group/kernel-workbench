@@ -6,7 +6,7 @@ from .paths import ROOT
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Kernel Observatory: agent-collected result storage and visualization')
+    parser = argparse.ArgumentParser(description='Kernel Workbench: agent-collected result storage and visualization')
     sub = parser.add_subparsers(dest='command', required=True)
     for name in ('api', 'serve'):
         server = sub.add_parser(name)
@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
     if args.command in ('api', 'serve'):
         import uvicorn
-        uvicorn.run('kernel_dashboard.app:app', host='127.0.0.1', port=args.port)
+        uvicorn.run('kernel_workbench.app:app', host='127.0.0.1', port=args.port)
         return
     try:
         from .collection import prepare as prepare_files, analyze_artifacts

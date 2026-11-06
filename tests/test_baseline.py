@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 import pytest
-from kernel_dashboard.remote_entry import collect_baseline, NoTrace
-from kernel_dashboard.analysis import analyze
+from kernel_workbench.remote_entry import collect_baseline, NoTrace
+from kernel_workbench.analysis import analyze
 
 
 def test_baseline_runs_without_trace_and_uses_median():

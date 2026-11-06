@@ -13,7 +13,7 @@ from .analysis import with_phase_points
 store = ReportStore()
 agents = AgentHistory()
 experiments = ExperimentStore()
-app = FastAPI(title='Kernel Observatory Results API')
+app = FastAPI(title='Kernel Workbench Results API')
 
 
 @app.middleware('http')
@@ -161,4 +161,4 @@ def agent_events(ident: str):
     return {'tail': text}
 
 
-app.mount('/', StaticFiles(directory=ROOT / 'kernel_dashboard/static', html=True), name='dashboard')
+app.mount('/', StaticFiles(directory=ROOT / 'kernel_workbench/static', html=True), name='dashboard')

@@ -4,9 +4,9 @@ import json
 import subprocess
 import pytest
 from fastapi.testclient import TestClient
-import kernel_dashboard.app as service
-from kernel_dashboard.experiments import ExperimentStore
-from kernel_dashboard.reports import ReportStore
+import kernel_workbench.app as service
+from kernel_workbench.experiments import ExperimentStore
+from kernel_workbench.reports import ReportStore
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def client(tmp_path, monkeypatch):
 
 
 def upload_pair(client, candidate_change=None):
-    baseline = json.load(open('kernel_dashboard/static/example.json'))
+    baseline = json.load(open('kernel_workbench/static/example.json'))
     baseline['timings'].update(source='unprofiled', total_ms=10, prefill=4, decode=6)
     candidate = copy.deepcopy(baseline)
     candidate['config']['runner'] = 'optimized_runner'

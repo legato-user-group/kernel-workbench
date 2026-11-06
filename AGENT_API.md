@@ -11,7 +11,7 @@ is provided by the web app.
 ## Start the result store
 
 ```sh
-uv run python -m kernel_dashboard api
+uv run python -m kernel_workbench api
 ```
 
 Default URL: `http://127.0.0.1:8765`. `GET /api/health` reports
@@ -25,7 +25,7 @@ Write a self-contained runner, or use `runners/tiny_decoder.py`. The helper only
 creates local files; it does not execute remote commands or import the runner.
 
 ```sh
-uv run python -m kernel_dashboard prepare \
+uv run python -m kernel_workbench prepare \
   --runner runners/tiny_decoder.py \
   --output /tmp/tiny-collection \
   --remote-dir /tmp/tiny-measure
@@ -87,7 +87,7 @@ reuse a prepared model across samples when adapting the runner.
 ## Inspect and aggregate results in the agent
 
 ```sh
-uv run python -m kernel_dashboard analyze \
+uv run python -m kernel_workbench analyze \
   --artifacts /tmp/tiny-collection/artifacts.tar.gz \
   --output /tmp/tiny-collection/result.json
 ```
@@ -206,5 +206,5 @@ latency reduction indicates a regression. If a linked result is later removed,
 the attempt remains visible and comparison becomes unavailable.
 
 Records live at `.runs/experiments/{id}/experiment.json` (or below
-`KERNEL_OPT_DATA`). The dashboard shows experiment history instead of the former
+`KERNEL_WORKBENCH_DATA`). The dashboard shows experiment history instead of the former
 agent-response/event panel; historical agent files and read APIs remain intact.

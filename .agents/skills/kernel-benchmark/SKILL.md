@@ -99,7 +99,7 @@ measurement fails, mark the fallback explicitly instead of calling it baseline.
 - Attribute operations through launch correlation and region annotations. Avoid
   adding both CPU annotation rows and duplicate device range rows in profiler
   summaries. Account for nested/overlapping regions when summing durations.
-- `kernel-opt`'s `unattributed` module means a measured kernel has no matched model
+- `kernel-workbench`'s `unattributed` module means a measured kernel has no matched model
   operation annotation. Keep its time/counters in totals. A kernel-name-derived
   label such as cat/copy can help, but mark it as inferred; do not invent a module.
 - Infer-opt's `StageBreakdown.unattributed_ms` is a different quantity:
@@ -119,7 +119,7 @@ GPU/software versions, source commit/hash, compile/setup time and profiling
 artifacts. Keep checkpoint identity and measurement scope with each result.
 
 Use the execution resources and compute budget authorized for the task. When
-working in kernel-opt, follow its `AGENT_API.md`: the coding agent calls the
+working in kernel-workbench, follow its `AGENT_API.md`: the coding agent calls the
 profiling API directly, the service owns Colab collection/cleanup, and the
 dashboard observes results. Do not add a nested coding-agent process just to
 perform measurements. This skill does not require a particular coding agent.
