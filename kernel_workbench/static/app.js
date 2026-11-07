@@ -83,6 +83,31 @@ function renderExperimentSelector(){
  $('#experiment').innerHTML=entries.length?entries.map(g=>`<option value="${esc(g.id)}">${esc(g.id)}</option>`).join(''):'<option value="example">예제 · 화면 검증</option>';
  $('#experiment').value=selectedExperiment||'example';
 }
+function renderExecution(){
+ const attempt=currentGroup()?.attempts.find(a=>a.id===experimentId);
+ const run=data||attempt?.comparison?.candidate;
+ $('#execution-method').hidden=!run;
+ if(!run)return;
+ const c=run.config,contract=run.evaluation?.contract||{},versions=run.versions||{};
+ const modes={
+  fp16_plain_cudagraph:'저장소 PyTorch 구현 · Prefill eager · Decode CUDA Graph · 일반 순차 생성',
+  int8_plain_cudagraph:'저장소 PyTorch 구현 · Prefill eager · Decode CUDA Graph · 일반 순차 생성',
+  int8_mtp3_cudagraph:'저장소 PyTorch 구현 · MTP k=3 · 병렬 검증 · CUDA Graph',
+  hf_bf16:'Hugging Face · BF16 · eager',
+ };
+ const flag=value=>value==null?'미기록':value?'사용':'사용 안 함';
+ const rows=[
+  ['모델',c.checkpoint||run.model?.name||run.model_name||'미기록'],
+  ['모델 revision',c.checkpoint_revision||'미기록'],
+  ['GPU',`${run.hardware.name}${run.hardware.memory_gib!=null?` · VRAM ${num(run.hardware.memory_gib)} GiB`:''}`],
+  ['실행 방식',modes[c.runner]||c.runner],
+  ['정밀도 / 최적화',`${c.dtype?.toUpperCase()||'미기록'} · 양자화 ${c.quantization===null?'사용 안 함':c.quantization??'미기록'} · MTP ${flag(c.mtp_enabled)}`],
+  ['입출력',`Batch ${c.batch} · 입력 ${num(c.input_tokens,0)}토큰 · 출력 ${num(c.output_tokens,0)}토큰${c.runner?.includes('plain_cudagraph')?` (첫 토큰은 prefill, decode ${num(Math.max(0,c.output_tokens-1),0)}회)`:''}`],
+ ];
+ if(contract.reference)rows.push(['정확성 기준',/\bHF\b.*\bBF16\b.*\beager\b/i.test(contract.reference)?'공식 HF BF16 eager mode':contract.reference]);
+ if(versions.torch||versions.cuda)rows.push(['실행 환경',`PyTorch ${versions.torch||'미기록'} · CUDA ${versions.cuda||'미기록'}`]);
+ $('#execution-details').innerHTML='<table aria-label="실행 방식 및 조건"><thead><tr><th>항목</th><th>실행 방식 및 조건</th></tr></thead><tbody>'+rows.map(([label,value])=>`<tr><th scope="row">${esc(label)}</th><td>${esc(value)}</td></tr>`).join('')+'</tbody></table>';
+}
 async function load(id,attemptId=null){
  const sequence=++loadSequence;
  const result=await api(id==='example'?'/example.json':`/api/runs/${id}/result`);
@@ -127,6 +152,7 @@ $('#experiment').onchange=e=>{follow=false;showExperiment(e.target.value).catch(
 $('#roof-phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.roofPhase));
 
 function renderExperiments(){
+ renderExecution();
  const group=currentGroup(),attempts=group?.attempts||[];
  const linked=new Set(attempts.flatMap(a=>[a.candidate_run_id,a.baseline_run_id]));
  const unlinked=(group?.runs||[]).filter(r=>!linked.has(r.id));
