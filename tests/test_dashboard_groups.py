@@ -42,12 +42,14 @@ def test_correctness_table_shows_recorded_engines_and_fields():
 import assert from 'node:assert/strict';
 import {correctnessTable} from './kernel_workbench/static/correctness-table.js';
 const table=correctnessTable({gate:{max_mean_kl:.005,strong_mismatches_allowed:0,margin_threshold:.5},state_comparison:'not checked',
-  checks:[{engine:'a',input_tokens:8,prefill_kl:.001,custom_metric:7,passed:true},{engine:'b',input_tokens:8,prefill_kl:.002,passed:false}]});
+  checks:[{engine:'a',input_tokens:8,positions:256,prefill_kl:.001,decode_mean_kl:.002,decode_max_kl:.003,
+    top1_agreement:1,strong_mismatches:0,cache_position:1279,expected_cache_position:1279,
+    reset_bitwise_equal:true,plain_token_agreement:1,custom_metric:7,passed:true},
+    {engine:'b',input_tokens:8,prefill_kl:.002,passed:false}]});
 assert.deepEqual(table.columns,['a','b']);
-assert.deepEqual(table.rows.map(r=>r.item),['Prefill KL','custom_metric','통과','State 비교']);
+assert.deepEqual(table.rows.map(r=>r.item),['Prefill KL','Decode 평균 KL','Decode 최대 KL','Top-1 일치율','Strong mismatch']);
 assert.deepEqual(table.rows[0],{item:'Prefill KL',criterion:'≤ 0.005',values:['0.001000','0.002000']});
-assert.deepEqual(table.rows[2].values,['예','아니오']);
-assert.deepEqual(table.rows[1].values,['7','미수집']);
+assert.deepEqual(table.rows[1].values,['0.002000','미수집']);
 assert.deepEqual(correctnessTable({details:'Compared logits.'}).rows[0].values,['Compared logits.']);
 assert.deepEqual(correctnessTable({}).rows[0].values,['미수집']);
 """

@@ -1,11 +1,8 @@
-// Show recorded checks as collected; a field without a label keeps its raw key.
+// Show the recorded logit comparison metrics.
 const LABELS = {
-  positions: '검사 위치 수', prefill_kl: 'Prefill KL', decode_mean_kl: 'Decode 평균 KL', decode_max_kl: 'Decode 최대 KL',
-  top1_agreement: 'Top-1 일치율', strong_mismatches: 'Strong mismatch', cache_position: 'Cache 위치',
-  expected_cache_position: '예상 Cache 위치', plain_token_agreement: 'Plain 대비 생성 토큰 일치율',
-  reset_bitwise_equal: '재실행 bitwise 일치', passed: '통과',
+  prefill_kl: 'Prefill KL', decode_mean_kl: 'Decode 평균 KL', decode_max_kl: 'Decode 최대 KL',
+  top1_agreement: 'Top-1 일치율', strong_mismatches: 'Strong mismatch',
 };
-const IDENTITY = new Set(['engine', 'input_tokens']);
 const show = value => typeof value === 'boolean' ? (value ? '예' : '아니오')
   : typeof value === 'number' && !Number.isInteger(value) ? value.toPrecision(4) : String(value);
 
@@ -18,14 +15,13 @@ function criteria(gate) {
   };
 }
 
-export function correctnessTable({checks = [], gate = {}, details = '', state_comparison: state} = {}) {
+export function correctnessTable({checks = [], gate = {}, details = ''} = {}) {
   if (!checks.length) return {columns: ['기록'], rows: [{item: '검증 기록', criterion: '—', values: [details || '미수집']}]};
   const rules = criteria(gate);
-  const keys = [...new Set(checks.flatMap(Object.keys))].filter(key => !IDENTITY.has(key));
+  const keys = Object.keys(LABELS).filter(key => checks.some(check => key in check));
   const rows = keys.map(key => ({
-    item: LABELS[key] || key, criterion: rules[key] || '—',
+    item: LABELS[key], criterion: rules[key] || '—',
     values: checks.map(check => key in check ? show(check[key]) : '미수집'),
   }));
-  if (state) rows.push({item: 'State 비교', criterion: '—', values: checks.map(() => state)});
-  return {columns: checks.map(check => check.engine), rows};
+  return {columns: checks.map(check => checks.length === 1 ? '기록' : check.engine), rows};
 }
