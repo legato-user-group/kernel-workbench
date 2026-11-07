@@ -27,7 +27,7 @@ def test_api_is_result_store_only(tmp_path,monkeypatch):
 
 
 def test_legacy_results_remain_readable(tmp_path,monkeypatch):
-    source=json.load(open('kernel_workbench/static/example.json'))
+    source=json.load(open('tests/example_result.json'))
     source.pop('phase_points');source.pop('phase_point_reasons')
     directory=tmp_path/'legacy';directory.mkdir()
     (directory/'result.json').write_text(json.dumps(source))
@@ -42,8 +42,8 @@ def test_legacy_results_remain_readable(tmp_path,monkeypatch):
 
 def test_source_analysis_enriches_display_without_rewriting_measurement(tmp_path, monkeypatch):
     client = isolated(tmp_path, monkeypatch)
-    raw = json.load(open('kernel_workbench/static/example.json'))
-    raw['hardware'] = {'name': 'NVIDIA A100-SXM4-80GB'}
+    raw = json.load(open('tests/example_result.json'))
+    raw['hardware'] = {'name': 'NVIDIA A100-SXM4-80GB', 'bandwidth': 2039e9, 'peaks': {'bf16_tensor': 312e12}}
     raw['kernels'], raw['estimates'], raw['point'] = [], [], None
     assert client.post('/api/runs', json={'id':'observed','result':raw}).status_code == 201
     original = (tmp_path/'observed/result.json').read_bytes()

@@ -68,6 +68,7 @@ def main():
              'runner_id': out.parent.parent.name, 'mtp_enabled': False, 'quantization': None,
              'kernels': args.kernels, 'model_config_file': 'results/model_config.json',
              'lengths': lengths, 'new_tokens': args.new_tokens, 'warmup': args.warmup, 'repeats': args.repeats,
+             'batch': 1, 'sampling': 'greedy', 'stop_on_eos': False,
              'hf_timing_requested': False, 'cache_capacity': capacity, 'gate': gate,
              'teacher_forcing_positions': args.new_tokens, 'state_comparison': 'not checked; logits and cache position checked',
              'timing': 'separate unprofiled wall/CUDA Event passes; model load, cache reset and graph capture excluded',

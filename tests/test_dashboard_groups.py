@@ -35,3 +35,20 @@ assert.equal(uploads[0].attempts[0].id,'failed-trial');
 assert.deepEqual(experimentGroups([],[]),[]);
 """
     subprocess.run(['node', '--input-type=module'], input=script, text=True, check=True, capture_output=True)
+
+
+def test_correctness_table_shows_recorded_engines_and_fields():
+    script = """
+import assert from 'node:assert/strict';
+import {correctnessTable} from './kernel_workbench/static/correctness-table.js';
+const table=correctnessTable({gate:{max_mean_kl:.005,strong_mismatches_allowed:0,margin_threshold:.5},state_comparison:'not checked',
+  checks:[{engine:'a',input_tokens:8,prefill_kl:.001,custom_metric:7,passed:true},{engine:'b',input_tokens:8,prefill_kl:.002,passed:false}]});
+assert.deepEqual(table.columns,['a','b']);
+assert.deepEqual(table.rows.map(r=>r.item),['Prefill KL','custom_metric','통과','State 비교']);
+assert.deepEqual(table.rows[0],{item:'Prefill KL',criterion:'≤ 0.005',values:['0.001000','0.002000']});
+assert.deepEqual(table.rows[2].values,['예','아니오']);
+assert.deepEqual(table.rows[1].values,['7','미수집']);
+assert.deepEqual(correctnessTable({details:'Compared logits.'}).rows[0].values,['Compared logits.']);
+assert.deepEqual(correctnessTable({}).rows[0].values,['미수집']);
+"""
+    subprocess.run(['node', '--input-type=module'], input=script, text=True, check=True, capture_output=True)

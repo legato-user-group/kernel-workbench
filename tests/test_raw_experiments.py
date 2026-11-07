@@ -32,7 +32,7 @@ def test_raw_dashboard_needs_no_upload_and_never_writes_during_reads(evidence, m
                 assert 'total_ms' not in comparison['speedup']
             else:
                 assert comparison['speedup'] == {}
-        ident = 'test-qwen-1024-mtp3'
+        ident = 'test-qwen-1024-int8_mtp3_cudagraph'
         result = client.get(f'/api/runs/{ident}/result').json()
         assert result['model']['layers'] == 64 and result['kernel_plan']
         assert result['phase_points']['prefill']['source'] == 'estimated'
@@ -48,7 +48,7 @@ def test_raw_dashboard_needs_no_upload_and_never_writes_during_reads(evidence, m
 def test_raw_file_changes_are_reflected_without_reimport(evidence):
     directory = evidence.parent.parent
     raw = RawExperiments(directory)
-    ident = 'test-qwen-1024-mtp3'
+    ident = 'test-qwen-1024-int8_mtp3_cudagraph'
     old = raw.result(ident)['timings']['prefill']
     path = evidence / 'results/timing_int8_mtp3_cudagraph_1024.json'
     data = json.loads(path.read_text())
@@ -123,7 +123,8 @@ def test_unchanged_checkpoint_uses_its_own_architecture_and_needs_no_mtp_parity(
     assert attempt['title'] == evidence.parent.name
     assert attempt['correctness']['status'] == 'passed'
     assert attempt['baseline_run_id'] is None and attempt['candidate_run_id'] == runs[0]['id']
-    assert 'MTP 생성 token parity 미검증' not in attempt['correctness']['details']
+    assert attempt['correctness']['checks'][0]['engine'] == engine
+    assert 'plain_token_agreement' not in attempt['correctness']['checks'][0]
     assert summarize(evidence)['complete']
 
 
@@ -174,7 +175,7 @@ def test_completed_profile_is_visible_without_summary_files_and_updates_live(evi
     raw = RawExperiments(evidence.parent.parent)
     reports = ReportStore(evidence.parent.parent, raw_repository=raw)
     monkeypatch.setattr(service, 'store', reports)
-    ident = 'test-qwen-1024-plain'
+    ident = 'test-qwen-1024-int8_plain_cudagraph'
     with TestClient(service.app) as client:
         result = client.get(f'/api/runs/{ident}/result').json()
         assert result['timings']['decode'] == 6 and result['timings']['source'] == 'unprofiled'
@@ -198,5 +199,63 @@ def test_completed_profile_is_visible_without_summary_files_and_updates_live(evi
     assert updated['evidence_revision'] != revision
     status.write_text('{"timeline_complete": false}')
     assert raw.result(ident)['kernels'] == []
-    assert raw.result('test-qwen-1024-mtp3')['kernels'] == []
+    assert raw.result('test-qwen-1024-int8_mtp3_cudagraph')['kernels'] == []
     assert raw.issues == []
+
+
+def spec_issue(evidence):
+    raw = RawExperiments(evidence.parent.parent)
+    return raw.result('test-qwen-1024-int8_mtp3_cudagraph')['hardware']
+
+
+def test_gpu_limits_come_only_from_a_record_for_the_gpu_that_ran(evidence):
+    from kernel_workbench.analysis import display_analysis
+    assert spec_issue(evidence)['bandwidth'] == 2039e9
+    path = evidence / 'results/hardware.json'
+    recorded = json.loads(path.read_text())
+    path.write_text(json.dumps({**recorded, 'gpu': 'Tesla T4'}))
+    assert 'Tesla T4' in spec_issue(evidence)['spec_issue'] and 'bandwidth' not in spec_issue(evidence)
+    path.write_text(json.dumps({**recorded, 'peaks': {'fp32': None}}))
+    assert 'spec_issue' in spec_issue(evidence)
+    path.unlink()
+    hardware = spec_issue(evidence)
+    assert hardware['spec_issue'] == 'results/hardware.json 미수집' and 'peaks' not in hardware
+    assert display_analysis(RawExperiments(evidence.parent.parent).result('test-qwen-1024-int8_plain_cudagraph')
+                            )['logical_bounds']['prefill']['bound'] == 'unknown'
+
+
+def test_settings_and_descriptions_are_read_from_evidence_not_defaulted(evidence):
+    raw = RawExperiments(evidence.parent.parent)
+    config = raw.result('test-qwen-1024-int8_plain_cudagraph')['config']
+    assert config['batch'] == 1 and config['sampling'] is None and config['prompt_category'] is None
+    assert config['dtype'] is None
+    attempt = raw.attempt('test-qwen-prose-1024')
+    assert attempt['hypothesis'] == '' and attempt['title'] == evidence.parent.name
+    (evidence / 'results/inputs.json').write_text(json.dumps({'category': 'code', 'chat_template': True}))
+    (evidence / 'registration.json').write_text(json.dumps({
+        'id_prefix': 'test-qwen', 'series': 'fixture', 'title': '시도', 'hypothesis': '가설',
+        'sampling': 'top_p', 'conclusions': {'1024': '해석'}}))
+    config = raw.result('test-qwen-1024-int8_plain_cudagraph')['config']
+    assert config['prompt_category'] == 'code' and config['chat_template'] is True and config['sampling'] == 'top_p'
+    attempt = raw.attempt('test-qwen-prose-1024')
+    assert (attempt['title'], attempt['hypothesis'], attempt['conclusion']) == ('시도', '가설', '해석')
+
+
+def test_correctness_publishes_recorded_scalars_per_engine(evidence):
+    attempt = RawExperiments(evidence.parent.parent).attempt('test-qwen-prose-128')
+    correctness = attempt['correctness']
+    assert [c['engine'] for c in correctness['checks']] == ['int8_plain_cudagraph', 'int8_mtp_parallel_verify4']
+    assert correctness['checks'][0]['reset_bitwise_equal'] is True
+    assert correctness['checks'][1]['plain_token_agreement'] == .75
+    assert correctness['gate']['max_mean_kl'] == .005
+
+
+def test_model_without_cost_analysis_still_shows_measurements(evidence):
+    from kernel_workbench.analysis import display_analysis, with_phase_points
+    (evidence / 'invocation.json').write_text('{"model": "tiny_decoder"}')
+    result = with_phase_points(display_analysis(
+        RawExperiments(evidence.parent.parent).result('test-qwen-1024-int8_plain_cudagraph')))
+    assert result['timings']['decode'] == 6 and result['estimates'] == [] and result['point'] is None
+    assert result['model']['name'] == 'test/candidate'
+    assert 'tiny_decoder' in result['phase_estimate_reasons']['prefill']
+    assert result['logical_bounds'] == {'prefill': None, 'decode': None}

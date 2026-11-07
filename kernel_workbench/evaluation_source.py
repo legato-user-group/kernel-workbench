@@ -53,6 +53,10 @@ class EvaluationSource:
             raise ValueError('Evidence paths must remain inside the experiment directory')
         return json.loads(path.read_text()) if path.is_file() else default
 
+    def setting(self, name):
+        """Run settings come from the contract; earlier runs may record them later in registration."""
+        return self.contract.get(name, self.registration.get(name))
+
     @staticmethod
     def timing_path(engine, length):
         return f'results/timing_{engine}_{length}.json'

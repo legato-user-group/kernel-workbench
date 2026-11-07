@@ -4,7 +4,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
-from .analysis import arithmetic_flops, bounds, hardware, iter_nsys, read_ncu
+from .analysis import arithmetic_flops, bounds, iter_nsys, read_ncu
 
 
 def merge_module_structure(model, observed):
@@ -73,7 +73,7 @@ def _matches(metadata, result):
 def attach_counter_bounds(root, result, statuses):
     """Match separate specimens by phase/name/launch shape, never multiply them by timeline calls."""
     samples, artifacts = {}, {}
-    hw = hardware(result['hardware']['name'])
+    hw = result['hardware']
     for status_path in statuses:
         directory = status_path.parent
         status = json.loads(status_path.read_text())

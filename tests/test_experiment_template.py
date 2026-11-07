@@ -60,6 +60,9 @@ def test_filled_template_is_readable_by_dashboard(tmp_path):
 
     edit('contract.json', lambda c: c.update(repeats=2, runner_id='test_run'))
     edit('environment.json', lambda e: e.update(gpu='Tesla T4', memory_gib=14.56))
+    edit('hardware.json', lambda h: h.update(gpu='Tesla T4', bandwidth=300e9, source='test',
+                                             peaks={'fp16_tensor': 65e12}))
+    (output / 'invocation.json').write_text('{"model": "qwen3_5"}')
     def fill_checks(data):
         check, reset = data['checks']
         check.update(prefill_kl=.001, decode_mean_kl=.001, top1_agreement=1,

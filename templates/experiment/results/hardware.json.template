@@ -1,0 +1,9 @@
+{
+  "gpu": "<environment.json의 gpu와 같은 값>",
+  "bandwidth": null,
+  "peaks": {
+    "<연산 경로, 예: fp16_tensor>": null
+  },
+  "source": "<값의 출처>",
+  "source_url": "<출처 URL>"
+}

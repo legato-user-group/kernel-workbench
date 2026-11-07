@@ -366,6 +366,7 @@ def main():
         save(out/'contract.json', {'reference':'official HF BF16 cached eager; SDPA; StaticCache',
             'candidate':'published INT8 group-128 + INT8 MTP head; BF16 lm_head',
             'lengths':lengths,'new_tokens':args.new_tokens,'warmup':args.warmup,'repeats':args.repeats,
+            'batch':1,'sampling':'greedy','stop_on_eos':False,
             'hf_timing_requested':not args.skip_hf_timing,
             'cache_capacity':capacity,'gate':gate,'teacher_forcing_positions':args.new_tokens,
             'timing':'separate unprofiled wall/CUDA Event passes; initial MTP drafts included in decode',

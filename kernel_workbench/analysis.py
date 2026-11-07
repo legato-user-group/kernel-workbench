@@ -8,27 +8,6 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-# Dense (not sparse) peaks. Datasheet units are decimal bytes and FLOPs.
-A100 = {
-    'A100-SXM4-40GB': 1555e9, 'A100-SXM4-80GB': 2039e9,
-    'A100-PCIE-40GB': 1555e9, 'A100-PCIE-80GB': 1935e9,
-}
-PEAKS = {'fp32': 19.5e12, 'fp64': 9.7e12, 'bf16_tensor': 312e12,
-         'fp16_tensor': 312e12, 'tf32_tensor': 156e12}
-
-
-def hardware(name):
-    key = name.upper().removeprefix('NVIDIA ').replace(' ', '-')
-    if key in ('T4', 'TESLA-T4'):
-        return {'name': name, 'bandwidth': 300e9, 'peaks': {'fp32': 8.1e12, 'fp16': 16.2e12, 'fp16_tensor': 65e12},
-                'source': 'NVIDIA T4 datasheet; theoretical, not measured ceilings',
-                'source_url': 'https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet-951643.pdf',
-                'supported': True}
-    bw = A100.get(key)
-    return {'name': name, 'bandwidth': bw, 'peaks': PEAKS if bw else {},
-            'source': 'NVIDIA A100 dense datasheet', 'supported': bool(bw)}
-
-
 def bounds(flops, traffic, hw):
     if not flops or traffic is None or not hw.get('bandwidth'):
         return {'compute_ms': None, 'memory_ms': None, 'lower_ms': None, 'bound': 'unknown'}
@@ -224,7 +203,7 @@ def timing_summary(meta, baseline):
 
 def analyze(meta, kernels, ncu=None, baseline=None):
     timings, timing_warning = timing_summary(meta, baseline)
-    hw = hardware(meta['gpu']['name'])
+    hw = meta['gpu']
     # Order matching is intentionally all-or-nothing; never silently match repeated names after a gap.
     matched = bool(ncu) and len(ncu) == len(kernels) and all(a['name'] == b['name'] and (not b.get('grid') or a['grid']==b['grid']) and (not b.get('block') or a['block']==b['block']) for a,b in zip(kernels,ncu))
     if matched:
@@ -263,8 +242,7 @@ def analyze(meta, kernels, ncu=None, baseline=None):
 def display_analysis(result):
     """Normalize display metadata without changing saved timing/kernel evidence."""
     result = dict(result)
-    hw = {**hardware(result['hardware']['name']), **result['hardware']}
-    result['hardware'] = hw
+    hw = result['hardware']
     result['estimates'] = [{**e, **bounds(e['flops'], e['bytes'], hw), 'source': 'estimated'}
                            for e in result.get('estimates', [])]
     result['logical_bounds'] = logical_phase_bounds(result)

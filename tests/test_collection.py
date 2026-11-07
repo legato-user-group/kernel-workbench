@@ -72,7 +72,7 @@ def test_gpu_host_collector_streams_logs_without_installing_tools(tmp_path,monke
 
 
 def test_agent_side_analysis_preserves_independent_timing(tmp_path):
-    fixture=json.load(open('kernel_workbench/static/example.json'))
+    fixture=json.load(open('tests/example_result.json'))
     config=fixture['config'];gpu={'name':fixture['hardware']['name']}
     meta={'config':config,'gpu':gpu,'model':fixture['model'],'total_ms':20,
           'phase_ms':{'prefill':5,'decode':15},'estimates':fixture['estimates'],'versions':{}}

@@ -13,4 +13,7 @@ if __name__=='__main__':
     args=parser.parse_args()
     source=RawExperiments(args.directory)
     print(json.dumps({'measurements':len(source.records()),'experiments':len(source.attempts()),
-                      'issues':source.issues},ensure_ascii=False,indent=2))
+                      'issues':source.issues,
+                      'hardware_issues':{r['id']:issue for r in source.records()
+                                         if (issue:=source.result(r['id'])['hardware'].get('spec_issue'))}},
+                     ensure_ascii=False,indent=2))

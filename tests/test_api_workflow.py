@@ -13,7 +13,7 @@ def test_upload_query_and_attachments_never_spawn_processes(tmp_path,monkeypatch
     monkeypatch.setattr(subprocess,'Popen',forbidden)
     monkeypatch.setattr(asyncio,'create_subprocess_exec',forbidden)
     monkeypatch.setattr(service,'store',ReportStore(tmp_path))
-    result=json.load(open('kernel_workbench/static/example.json'))
+    result=json.load(open('tests/example_result.json'))
     with TestClient(service.app) as client:
         response=client.post('/api/runs',json={'id':'agent-baseline','summary':'Agent checked correctness.','result':result})
         assert response.status_code==201
@@ -41,7 +41,7 @@ def test_upload_query_and_attachments_never_spawn_processes(tmp_path,monkeypatch
 
 def test_invalid_report_is_rejected_atomically(tmp_path,monkeypatch):
     monkeypatch.setattr(service,'store',ReportStore(tmp_path))
-    result=json.load(open('kernel_workbench/static/example.json'))
+    result=json.load(open('tests/example_result.json'))
     client=TestClient(service.app)
     bad=copy.deepcopy(result);bad['config']['output_tokens']=0
     assert client.post('/api/runs',json={'result':bad}).status_code==422

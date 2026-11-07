@@ -17,10 +17,14 @@ def evidence(tmp_path):
 
     gate = {'max_mean_kl': .005, 'margin_threshold': .5, 'strong_mismatches_allowed': 0}
     contract = {'lengths': [128, 512, 1024, 4096], 'new_tokens': 256, 'warmup': 3,
-                'repeats': 3, 'cache_capacity': 4416, 'hf_timing_requested': False, 'gate': gate,
+                'repeats': 3, 'batch': 1, 'cache_capacity': 4416, 'hf_timing_requested': False, 'gate': gate,
                 'models': {key: {'repo': f'test/{key}', 'revision': 'fixture'} for key in ('candidate', 'reference')}}
     write('results/contract.json', contract)
     write('registration.json', {'id_prefix': 'test-qwen', 'series': 'fixture'})
+    write('invocation.json', {'model': 'qwen3_5'})
+    write('results/hardware.json', {'gpu': 'NVIDIA A100-SXM4-80GB', 'bandwidth': 2039e9,
+                                    'peaks': {'fp32': 19.5e12, 'bf16_tensor': 312e12, 'fp16_tensor': 312e12},
+                                    'source': 'fixture'})
     write('session_status.json', {'observed_at_utc': '2026-01-01T00:00:00Z'})
     write('results/environment.json', {'gpu': 'NVIDIA A100-SXM4-80GB', 'memory_gib': 79.25,
                                        'torch': 'fixture', 'cuda': 'fixture', 'packages': {}})

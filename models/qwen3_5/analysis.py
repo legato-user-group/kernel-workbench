@@ -62,7 +62,7 @@ def describe(config):
         children.append({'id': prefix, 'label': f'Layer {i} · {"GatedDeltaNet" if kind == "linear_attention" else "Full attention"}',
                          'children': operations(prefix,kind)})
     children += [{'id': 'final_norm', 'label': 'Final RMSNorm'},
-                 {'id': 'lm_head', 'label': f'{config.get("dtype", "bf16").upper()} lm_head · {c["hidden_size"]} → {c["vocab_size"]}'}]
+                 {'id': 'lm_head', 'label': f'{(config.get("dtype") or "bf16").upper()} lm_head · {c["hidden_size"]} → {c["vocab_size"]}'}]
     if config.get('mtp_enabled', True):
         children.append({'id': 'mtp', 'label': 'MTP · full-attention decoder', 'children': [
             {'id': 'mtp.fc', 'label': f'Normalized embedding + hidden · {2*c["hidden_size"]} → {c["hidden_size"]}'},
@@ -97,7 +97,7 @@ def supplement(config):
             temporary = 4*a*b if phase == 'prefill' and not is_head and quantized else 0
             traffic = calls*(weights + temporary + 2*m*(a+b))
             path = 'fp32' if quantized and phase == 'decode' and not is_head else precision
-            implementation = ('torch.nn.functional.linear · ' + config.get('dtype', 'bf16') if is_head or not quantized else
+            implementation = ('torch.nn.functional.linear · ' + (config.get('dtype') or 'bf16') if is_head or not quantized else
                               'qwen3_5.quant.dequantize_int8 + F.linear' if phase == 'prefill' else
                               'qwen3_5.quant_kernels.w8a16_group_gemv')
             rows.append({'module': module, 'phase': phase, 'flops': {path: 2*m*a*b*calls},

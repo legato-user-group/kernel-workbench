@@ -1,11 +1,14 @@
 import json
 import sqlite3
 import pytest
-from kernel_workbench.analysis import bounds,hardware,read_nsys,read_ncu,analyze,counters
+from kernel_workbench.analysis import bounds,read_nsys,read_ncu,analyze,counters
+
+T4 = {'name': 'Tesla T4', 'bandwidth': 300e9, 'peaks': {'fp32': 8.1e12, 'fp16': 16.2e12, 'fp16_tensor': 65e12}}
+A100 = {'name': 'A100-SXM4-40GB', 'bandwidth': 1555e9, 'peaks': {'fp32': 19.5e12, 'bf16_tensor': 312e12}}
 
 
 def test_bounds_and_units():
-    hw=hardware('A100-SXM4-40GB')
+    hw=A100
     assert bounds({'bf16_tensor':312e9},1555e6,hw)['lower_ms']==pytest.approx(1)
     assert bounds({'fp32':19.5e9},1,hw)['bound']=='compute'
     assert bounds({'fp32':1},1555e6,hw)['bound']=='memory'
@@ -13,20 +16,18 @@ def test_bounds_and_units():
     assert bounds(None,0,hw)['bound']=='unknown'
     assert bounds({'fp32':1},None,hw)['lower_ms'] is None
     assert bounds({'fp32':0},0,hw)['lower_ms']==0
-    assert bounds({'fp32':1},1,hardware('MIG A100'))['lower_ms'] is None
+    assert bounds({'fp32':1},1,{'name':'not recorded'})['lower_ms'] is None
 
 
-def test_t4_roofline_uses_fp16_and_has_no_bf16_ceiling():
-    hw = hardware('Tesla T4')
-    assert hw['bandwidth'] == 300e9 and hw['peaks']['fp16_tensor'] == 65e12
-    assert 'bf16_tensor' not in hw['peaks']
+def test_unrecorded_precision_path_has_no_bound():
+    hw = T4
     assert bounds({'fp16_tensor': 65e9}, 1, hw)['compute_ms'] == pytest.approx(1)
     assert bounds({'bf16_tensor': 1}, 1, hw)['bound'] == 'unknown'
 
 
 def test_logical_phase_bounds_aggregate_work_without_timings_or_samples():
     from kernel_workbench.analysis import logical_phase_bounds
-    result = {'hardware': hardware('Tesla T4'), 'config': {'output_tokens': 3},
+    result = {'hardware': T4, 'config': {'output_tokens': 3},
               'estimates': [
                   {'phase': 'prefill', 'flops': {'fp16_tensor': 65e9}, 'bytes': 1},
                   {'phase': 'prefill', 'flops': {'fp16_tensor': 65e9}, 'bytes': 1},
@@ -53,7 +54,7 @@ def test_qwen08b_projection_model_has_compute_prefill_and_memory_decode():
     modeled = supplement({'model_config': config['text_config'], 'batch': 1,
                           'input_tokens': 1024, 'output_tokens': 256, 'dtype': 'fp16',
                           'quantization': None, 'runner': 'fp16_plain_cudagraph', 'mtp_enabled': False})
-    phases = logical_phase_bounds({**modeled, 'hardware': hardware('Tesla T4'),
+    phases = logical_phase_bounds({**modeled, 'hardware': T4,
                                    'config': {'output_tokens': 256}})
     assert phases['prefill']['bound'] == 'compute'
     assert phases['prefill']['lower_ms'] == pytest.approx(15.6865195087)
@@ -88,7 +89,7 @@ def test_csv_and_fma(tmp_path):
 
 
 def test_mismatch_never_fabricates_kernel_counters():
-    meta=json.load(open('kernel_workbench/static/example.json'))
+    meta=json.load(open('tests/example_result.json'))
     source={'gpu':{'name':meta['hardware']['name']},'model':meta['model'],'config':meta['config'],
             'total_ms':9.4,'phase_ms':{'prefill':1.8,'decode':7.6},'estimates':meta['estimates']}
     k={**meta['kernels'][0],'source':'unavailable','flops':None,'bytes':None}

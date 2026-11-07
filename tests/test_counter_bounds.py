@@ -3,8 +3,10 @@ import json
 
 import pytest
 
-from kernel_workbench.analysis import arithmetic_flops, bounds, flop_metric_plan, hardware, read_ncu
+from kernel_workbench.analysis import arithmetic_flops, bounds, flop_metric_plan, read_ncu
 from kernel_workbench.profile_data import attach_counter_bounds
+
+T4 = {'name': 'Tesla T4', 'bandwidth': 300e9, 'peaks': {'fp32': 8.1e12, 'fp16': 16.2e12, 'fp16_tensor': 65e12}}
 
 
 def t4_plan():
@@ -28,7 +30,7 @@ def test_t4_arithmetic_metrics_require_complete_paths_and_count_fma_twice():
     assert arithmetic_flops(metrics, plan['required']) is None
     assert flop_metric_plan('', 'Tesla T4')['missing']
     assert flop_metric_plan('', 'A100-SXM4-80GB')['missing']
-    assert bounds({'fp32': 0}, 0, hardware('Tesla T4'))['bound'] == 'unknown'
+    assert bounds({'fp32': 0}, 0, T4)['bound'] == 'unknown'
 
 
 def test_wide_counter_units_are_normalized(tmp_path):
@@ -66,7 +68,7 @@ def test_counter_bounds_are_per_sample_and_never_extrapolated(tmp_path):
     row = {'phase': 'decode', 'name': 'gemv', 'grid': [1, 1, 1], 'block': [128, 1, 1],
            'calls': 255000, 'duration_ms': 1000, 'flops': None, 'bytes': None, 'source': 'partial'}
     result = {'config': {'runner': 'fp16_plain_cudagraph', 'input_tokens': 1024},
-              'hardware': {'name': 'Tesla T4'}, 'profiling': {}, 'kernels': [row]}
+              'hardware': T4, 'profiling': {}, 'kernels': [row]}
     import gzip
     report = directory / 'counters-decode.ncu-rep.gz'
     report.write_bytes(gzip.compress(b'raw report'))

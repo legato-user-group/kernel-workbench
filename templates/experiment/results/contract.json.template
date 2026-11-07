@@ -18,6 +18,9 @@
   "new_tokens": 256,
   "warmup": 3,
   "repeats": 10,
+  "batch": 1,
+  "sampling": "greedy",
+  "stop_on_eos": false,
   "hf_timing_requested": false,
   "cache_capacity": 1344,
   "gate": {

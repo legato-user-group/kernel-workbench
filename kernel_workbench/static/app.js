@@ -1,5 +1,5 @@
 import { experimentGroups } from './experiment-groups.js?v=history-2';
-import { correctnessRows } from './correctness-table.js';
+import { correctnessTable } from './correctness-table.js';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let data, phase='all',runId=null,follow=true,runRecords=[],selectedExperiment=null;
 let experimentId=null,experimentRecords=[],experimentFingerprint='',loadSequence=0,refreshing=false;
@@ -19,7 +19,6 @@ function render(){
   metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,t.total_ms?t.prefill/t.total_ms*100:0)+
   metric('DECODE TOTAL',`${num(t.decode)} <small>ms</small>`,t.total_ms?t.decode/t.total_ms*100:0)+
   metric('DECODE / TOKEN',`${num(decodePerToken,3)} <small>ms/token</small>`);
- $('#notice').textContent=runId==='example'?'화면 검증용 예제 데이터입니다. 실제 GPU 측정 결과가 아닙니다.':'';
  $('#gpu-name').textContent=data.hardware.name;
  renderLogicalBounds();roofline();renderExperiments();
 }
@@ -44,7 +43,7 @@ function roofline(){
  const messages={not_executed:'해당 구간은 실행되지 않았습니다.',missing_data:'이 실행에는 해당 구간의 커널 또는 비용 추정 데이터가 없습니다.',missing_duration:'해당 구간의 실행 시간을 수집하지 못했습니다.',missing_counters_or_nonpositive_work:'연산량·메모리 트래픽이 부족하거나 0이어서 로그 축 위치를 표시할 수 없습니다.'};
  const missing=keys.filter(key=>key!=='all'&&!points[key]);
  $('#phase-notice').textContent=missing.map(key=>`${labels[key]}: ${messages[data.phase_point_reasons?.[key]]||data.phase_point_reasons?.[key]||messages.missing_data}`).join(' ');
- if(!hw.bandwidth){$('#roofline').innerHTML='<div class="empty">하드웨어 성능 정보를 확인할 수 없어 Roofline을 계산할 수 없습니다.</div>';return}
+ if(!hw.bandwidth){$('#roofline').innerHTML=`<div class="empty">수집된 GPU 사양이 없어 Roofline을 계산할 수 없습니다.${hw.spec_issue?` (${esc(hw.spec_issue)})`:''}</div>`;return}
  const W=850,H=350,L=65,R=30,T=28,B=47;
  let xmin=-2,xmax=5,ymin=-5,ymax=3;
  // Keep axes stable across phase switches for direct visual comparison.
@@ -53,9 +52,11 @@ function roofline(){
  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${phase==='all'?'전체·prefill·decode 비교':labels[phase]} roofline. 가로축 연산 집약도, 세로축 TFLOP/s. 구간별 수치는 그래프 아래 표시됩니다.">`;
  for(let i=xmin;i<=xmax;i++)s+=`<line x1="${x(10**i)}" y1="${T}" x2="${x(10**i)}" y2="${H-B}" stroke="#2b343b"/><text x="${x(10**i)}" y="${H-B+20}" text-anchor="middle">10<tspan baseline-shift="super" font-size="8">${i}</tspan></text>`;
  for(let i=ymin;i<=ymax;i++)s+=`<line x1="${L}" y1="${y(10**i)}" x2="${W-R}" y2="${y(10**i)}" stroke="#2b343b"/><text x="${L-12}" y="${y(10**i)+4}" text-anchor="end">10<tspan baseline-shift="super" font-size="8">${i}</tspan></text>`;
- const roofs=[['BF16 Tensor',hw.peaks?.bf16_tensor/1e12,'#8dd5b2'],['FP16 Tensor',hw.peaks?.fp16_tensor/1e12,'#8dd5b2']].filter((r,i,rows)=>r[1]>0&&(i!==1||r[1]!==rows[0][1]));
- if(hw.peaks?.bf16_tensor>0&&hw.peaks.bf16_tensor===hw.peaks.fp16_tensor)roofs[0][0]='BF16 / FP16 Tensor';
- roofs.forEach(([name,peak,color],i)=>{const ridge=peak*1e12/hw.bandwidth;const xa=10**xmin;s+=`<path d="M${x(xa)},${y(xa*hw.bandwidth/1e12)} L${x(ridge)},${y(peak)} L${W-R},${y(peak)}" fill="none" stroke="${color}" stroke-width="1.8"/><text x="${W-R-5}" y="${y(peak)-(i===1?-14:7)}" text-anchor="end" style="fill:${color};font-size:10px">${name} · ${peak} T</text>`});
+ // One ceiling: the recorded Tensor peak for the precision this run used.
+ const dtype=data.config.dtype,value=hw.peaks?.[`${dtype}_tensor`],color='#8dd5b2',xa=10**xmin;
+ if(value>0){const peak=value/1e12,ridge=value/hw.bandwidth;
+  s+=`<path d="M${x(xa)},${y(xa*hw.bandwidth/1e12)} L${x(ridge)},${y(peak)} L${W-R},${y(peak)}" fill="none" stroke="${color}" stroke-width="1.8"/><text x="${W-R-5}" y="${y(peak)-7}" text-anchor="end" style="fill:${color};font-size:10px">${esc(dtype.toUpperCase())} Tensor · ${num(peak)} T</text>`}
+ else{s+=`<path d="M${x(xa)},${y(xa*hw.bandwidth/1e12)} L${W-R},${y((10**xmax)*hw.bandwidth/1e12)}" fill="none" stroke="${color}" stroke-width="1.8"/><text x="${W-R-5}" y="${T+18}" text-anchor="end" style="fill:${color};font-size:10px">${esc(dtype?.toUpperCase()||'정밀도 미기록')} Tensor 최대 성능 미수집</text>`}
  s+=`<text x="${L+15}" y="${T+18}">메모리 대역폭 ${num(hw.bandwidth/1e12,3)} TB/s</text>`;
  const offsets={all:5,prefill:-15,decode:24};
  visible.forEach(key=>{const p=points[key],px=x(p.intensity),py=y(p.tflops),color=colors[key];
@@ -73,8 +74,8 @@ function setPhase(next){
 
 function renderExperimentSelector(){
  const entries=groups();
- $('#experiment').innerHTML=entries.length?entries.map(g=>`<option value="${esc(g.id)}">${esc(g.id)}</option>`).join(''):'<option value="example">예제 · 화면 검증</option>';
- $('#experiment').value=selectedExperiment||'example';
+ $('#experiment').innerHTML=entries.length?entries.map(g=>`<option value="${esc(g.id)}">${esc(g.id)}</option>`).join(''):'<option value="">수집된 실험 없음</option>';
+ $('#experiment').value=selectedExperiment||'';
 }
 function renderExecution(){
  const attempt=currentGroup()?.attempts.find(a=>a.id===experimentId);
@@ -82,31 +83,25 @@ function renderExecution(){
  $('#execution-method').hidden=!run;
  if(!run)return;
  const c=run.config,contract=run.evaluation?.contract||{},versions=run.versions||{};
- const modes={
-  fp16_plain_cudagraph:'저장소 PyTorch 구현 · Prefill eager · Decode CUDA Graph · 일반 순차 생성',
-  int8_plain_cudagraph:'저장소 PyTorch 구현 · Prefill eager · Decode CUDA Graph · 일반 순차 생성',
-  int8_mtp3_cudagraph:'저장소 PyTorch 구현 · MTP k=3 · 병렬 검증 · CUDA Graph',
-  hf_bf16:'Hugging Face · BF16 · eager',
- };
  const flag=value=>value==null?'미기록':value?'사용':'사용 안 함';
  const rows=[
   ['모델',c.checkpoint||run.model?.name||run.model_name||'미기록'],
   ['모델 revision',c.checkpoint_revision||'미기록'],
   ['GPU',`${run.hardware.name}${run.hardware.memory_gib!=null?` · VRAM ${num(run.hardware.memory_gib)} GiB`:''}`],
-  ['실행 방식',modes[c.runner]||c.runner],
+  ['실행 방식',contract.candidate?`${c.runner} · ${contract.candidate}`:c.runner],
   ['정밀도 / 최적화',`${c.dtype?.toUpperCase()||'미기록'} · 양자화 ${c.quantization===null?'사용 안 함':c.quantization??'미기록'} · MTP ${flag(c.mtp_enabled)}`],
-  ['입출력',`Batch ${c.batch} · 입력 ${num(c.input_tokens,0)}토큰 · 출력 ${num(c.output_tokens,0)}토큰`],
+  ['입출력',`Batch ${c.batch??'미기록'} · ${c.prompt_category||'유형 미기록'} 입력 ${num(c.input_tokens,0)}토큰 · 출력 ${num(c.output_tokens,0)}토큰 · 샘플링 ${c.sampling||'미기록'}`],
+  ['GPU 사양 출처',run.hardware.source||run.hardware.spec_issue||'미기록'],
  ];
- if(contract.reference)rows.push(['정확성 기준',/\bHF\b.*\bBF16\b.*\beager\b/i.test(contract.reference)?'공식 HF BF16 eager mode':contract.reference]);
+ if(contract.reference)rows.push(['정확성 기준',contract.reference]);
  if(versions.torch||versions.cuda)rows.push(['실행 환경',`PyTorch ${versions.torch||'미기록'} · CUDA ${versions.cuda||'미기록'}`]);
  $('#execution-details').innerHTML='<table aria-label="실행 방식 및 조건"><thead><tr><th>항목</th><th>실행 방식 및 조건</th></tr></thead><tbody>'+rows.map(([label,value])=>`<tr><th scope="row">${esc(label)}</th><td>${esc(value)}</td></tr>`).join('')+'</tbody></table>';
 }
 async function load(id,attemptId=null){
  const sequence=++loadSequence;
- const result=await api(id==='example'?'/example.json':`/api/runs/${id}/result`);
+ const result=await api(`/api/runs/${id}/result`);
  if(sequence!==loadSequence)return;
  data=result;runId=id;experimentId=attemptId;
- if(id==='example')selectedExperiment='example';
  $('#analysis-body').hidden=false;$('#result-unavailable').hidden=true;
  renderExperimentSelector();render();
 }
@@ -118,10 +113,15 @@ async function showExperiment(id,attemptId=null){
  const selected=attempt?group.runs.find(r=>r.id===attempt.candidate_run_id):group?.runs[0];
  ++loadSequence;runId=null;data=null;
  $('#analysis-body').hidden=true;$('#result-unavailable').hidden=!!selected;
- $('#notice').textContent='';
  renderExperimentSelector();renderExperiments();
  if(selected){await load(selected.id,experimentId);return}
  $('#result-unavailable').textContent='이 시도의 측정 결과는 아직 수집되지 않았습니다.';
+}
+function showEmpty(){
+ ++loadSequence;data=null;runId=null;experimentId=null;selectedExperiment=null;
+ $('#analysis-body').hidden=true;$('#result-unavailable').hidden=false;
+ $('#result-unavailable').textContent='수집된 실험 결과가 없습니다. 에이전트가 experiments/에 결과를 저장하면 자동으로 표시됩니다.';
+ renderExperimentSelector();renderExperiments();
 }
 async function refresh(){
  if(refreshing)return;refreshing=true;
@@ -131,7 +131,7 @@ async function refresh(){
   const entries=groups(),group=currentGroup();
   const selected=group?.attempts.find(a=>a.id===experimentId);
   const candidate=group?.runs.find(r=>r.id===selected?.candidate_run_id);
-  if(!entries.length){if(!data||runId!=='example')await load('example');else{renderExperimentSelector();renderExperiments()}}
+  if(!entries.length)showEmpty();
   else if(!group)await showExperiment(entries[0].id);
   else if((follow&&(group.attempts[0]?.id||null)!==experimentId)||
           (experimentId&&!group.attempts.some(a=>a.id===experimentId)))await showExperiment(group.id);
@@ -167,9 +167,8 @@ function renderExperiments(){
  if(!e)return;
  $('#correctness-status').textContent=({passed:'성공',failed:'실패',not_checked:'미검증'})[e.correctness.status];
  $('#correctness-status').dataset.status=e.correctness.status;
- const mtp=e.correctness.details.includes('int8_mtp_parallel_verify4:');
- const candidateLabel=mtp?'INT8 + MTP':(e.comparison.candidate?.config.dtype?.toUpperCase()||'평가 경로');
- $('#correctness-details').innerHTML=`<div class="table-wrap"><table><thead><tr><th>검증 항목</th><th>통과 기준</th><th>${mtp?'INT8 plain':'기준 경로'}</th><th>${esc(candidateLabel)}</th></tr></thead><tbody>`+correctnessRows(e.correctness.details).map(row=>`<tr><th scope="row">${esc(row.item)}</th><td>${esc(row.criterion)}</td><td>${esc(row.baseline)}</td><td>${esc(row.candidate)}</td></tr>`).join('')+'</tbody></table></div>';
+ const table=correctnessTable(e.correctness);
+ $('#correctness-details').innerHTML=`<div class="table-wrap"><table><thead><tr><th>검증 항목</th><th>통과 기준</th>${table.columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>`+table.rows.map(row=>`<tr><th scope="row">${esc(row.item)}</th><td>${esc(row.criterion)}</td>${row.values.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')+'</tbody></table></div>';
 }
 refresh().catch(fail);
 setInterval(()=>refresh().catch(fail),2000);

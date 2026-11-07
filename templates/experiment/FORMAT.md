@@ -1,7 +1,8 @@
 # 대시보드 실험 자료 템플릿
 
-현재 공통 수집기와 대시보드가 읽는 Qwen3.5 checkpoint 평가 형식이다.
-다른 모델을 지원하려면 해당 모델의 평가·비용 해석 구현이 필요하다.
+대시보드는 에이전트가 이 형식으로 수집한 파일만 표시하며, 실험·환경별 값을 코드에 두지 않는다.
+다른 모델은 `models/<모델>/`에 평가 도구와 `analysis.py`의 `supplement(config)`를 추가한다.
+비용 모형이 없는 모델은 성능·정확성만 표시한다.
 
 ## 사용법
 
@@ -45,6 +46,7 @@ experiments/<실험명>/
     results/
       contract.json            # 실행·정확성 검증 조건
       environment.json         # 실제 GPU·라이브러리 버전
+      hardware.json            # 실제 GPU의 대역폭·최대 연산 성능과 출처
       model_config.json        # 사용한 checkpoint의 원본 config.json
       inputs.json              # 실제 입력과 tokenizer 조건
       correctness.json         # 정확성 검사와 reset 재현성 검사
@@ -60,6 +62,7 @@ checkpoint의 원본을 저장한다. 실험별 실행 스크립트를 만들지
 |---|---|
 | `contract.json` | `lengths`, `new_tokens`, engine, dtype, quantization, MTP, checkpoint revision이 실제 실행과 일치해야 한다. 기본 형식은 원본 checkpoint의 일반 CUDA Graph decode다. |
 | `environment.json` | GPU 이름과 표시 가능한 VRAM, PyTorch·CUDA·의존성 버전을 기록한다. |
+| `hardware.json` | 실행 후 `environment.json`의 GPU를 기준으로 에이전트가 작성한다. `gpu`는 같은 이름, `bandwidth`는 bytes/s, `peaks`는 연산 경로별 FLOP/s다. 경로 이름은 비용 모형의 `flops` 키와 같아야 한다. 실측이 아니면 `source`에 데이터시트 등 출처를 적는다. 없으면 Roofline과 이론 하한을 표시하지 않는다. |
 | `inputs.json` | 원문, 실제 input token IDs와 해시, chat template·특수 토큰 적용 여부를 보존한다. |
 | `correctness.json` | engine·입력 길이별 검사와 engine별 reset 검사를 기록한다. 검사를 하지 않았으면 `checks: []`로 두며 통과 값을 만들지 않는다. |
 | `timing_<engine>_<N>.json` | `<N>`은 실제 입력 토큰 수다. `prefill_forward`, `engine_ttft`, `decode`, `generation` 각각에 `source`, `sample_count`, 원시 `samples`를 기록한다. |
@@ -75,8 +78,8 @@ Decode와 generation 표본에는 실제 생성 토큰의 `output_ids_sha256`을
 Decode는 사전 prefill 이후의 생성 구간이며, generation은 prefill부터 전체 생성 완료까지다.
 각 구간을 별도로 실행하므로 중앙값을 더해 전체 시간을 대체하지 않는다.
 
-현재 raw reader는 batch 1·prose·greedy 평가를 표시한다. 다른 입력 유형이나 생성 설정을
-기존 형식에 임의로 넣지 말고 수집기와 해석기를 함께 확장한다.
+입력 유형은 `inputs.json`, batch·sampling·EOS 설정은 `contract.json`에서 읽어 그대로 표시한다.
+기록되지 않은 값은 `미기록`으로 표시하며 기본값으로 채우지 않는다.
 
 ## 선택 자료
 
@@ -85,6 +88,9 @@ Decode는 사전 prefill 이후의 생성 구간이며, generation은 prefill부
 평가만 있어도 현재 대시보드의 실행 조건·정확성·성능·이론 Roofline을 표시할 수 있다.
 이론 FLOPs·논리적 bytes는 저장한 모델 구조에서 계산하며 GPU 카운터와 구분한다.
 
-이력 ID를 별도로 지정할 때만 날짜 폴더에 `registration.json`을 둔다.
-기본 ID 접두사는 `<실험명>-<날짜>`이며 최대 40자다. 원시 결과를 재사용할 때는
+날짜 폴더의 `registration.json`(`registration.json.template` 참고)에 에이전트가 제목·가설·변경 내용·
+결과 해석을 기록한다. 없으면 `기록 없음`으로 표시하며, 결과 해석은 측정값 요약으로 대체한다.
+이력 ID를 지정할 때는 `id_prefix`를 쓴다. 기본 접두사는 `<실험명>-<날짜>`이며 최대 40자다.
+수집 후 `contract.json`에 없던 실행 설정(`batch`, `sampling`, `stop_on_eos`)은 근거를 확인해 여기에 기록할 수 있다.
+원시 결과를 재사용할 때는
 이전 실험의 `registration.json`, 모델 식별자, 해시, 측정값을 그대로 복사하지 않는다.

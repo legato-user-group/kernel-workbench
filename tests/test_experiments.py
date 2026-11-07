@@ -22,7 +22,7 @@ def client(tmp_path, monkeypatch):
 
 
 def upload_pair(client, candidate_change=None):
-    baseline = json.load(open('kernel_workbench/static/example.json'))
+    baseline = json.load(open('tests/example_result.json'))
     baseline['timings'].update(source='unprofiled', total_ms=10, prefill=4, decode=6)
     candidate = copy.deepcopy(baseline)
     candidate['config']['runner'] = 'optimized_runner'

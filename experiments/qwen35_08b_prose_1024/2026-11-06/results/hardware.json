@@ -1,0 +1,12 @@
+{
+  "gpu": "Tesla T4",
+  "bandwidth": 300000000000.0,
+  "peaks": {
+    "fp32": 8100000000000.0,
+    "fp16": 16200000000000.0,
+    "fp16_tensor": 65000000000000.0
+  },
+  "source": "NVIDIA T4 datasheet; theoretical, not measured ceilings",
+  "source_url": "https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet-951643.pdf",
+  "recorded_after_run": "Moved from the former dashboard code table; not collected during this run and not re-checked against the datasheet."
+}

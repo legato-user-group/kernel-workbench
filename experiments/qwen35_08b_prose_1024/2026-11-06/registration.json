@@ -1,0 +1,7 @@
+{
+  "hypothesis": "원본 checkpoint의 일반 decode 성능과 HF BF16 대비 정확성을 검증한다.",
+  "batch": 1,
+  "sampling": "greedy",
+  "stop_on_eos": false,
+  "recorded_after_run": "Run settings confirmed from report.md and models/qwen3_5/evaluation.py (single-row input, argmax, no EOS stop); hypothesis moved from the former dashboard code."
+}
