@@ -32,8 +32,7 @@ function renderLogicalBounds(){
   const values=decode?cost.per_token:cost;
   return `<article class="logical-bound-card" data-logical-phase="${phase}"><div class="logical-bound-head"><h3>${title}</h3><span class="bound ${esc(cost.bound)}">${labels[cost.bound]}</span></div><div class="logical-bound-value">${time(values.lower_ms)}<small>${unit}</small></div><div class="logical-bound-details"><span>Compute 하한 <b>${time(values.compute_ms)}</b></span><span>Memory 하한 <b>${time(values.memory_ms)}</b></span><span>연산 집약도 <b>${num(cost.intensity)} FLOP/byte</b></span></div><p>${decode?`${num(cost.steps,0)}토큰 합계 하한 ${time(cost.lower_ms)}`:`입력 ${num(data.config.input_tokens,0)}토큰`}</p></article>`;
  }).join('');
- const projectionOnly=data.estimate_scope?.startsWith('projection GEMMs only');
- $('#logical-bounds-scope').textContent=(projectionOnly?'Projection 연산 기준 · attention·DeltaNet·정규화·elementwise 제외. ':'모델 연산 비용 모형 기준. ')+'단계별 연산량과 논리적 텐서 이동량을 합산하고 GPU 이론 peak를 적용합니다. 하한 = max(Compute, Memory). 캐시 재사용은 생략하며 실제 실행 지연은 포함하지 않습니다.';
+
 }
 function roofline(){
  const labels={all:'전체 실행',prefill:'Prefill',decode:'Decode'};
@@ -41,11 +40,11 @@ function roofline(){
  const hw=data.hardware, points={all:data.point,...data.phase_points};
  const keys=phase==='all'?['all','prefill','decode']:[phase];
  const visible=keys.filter(key=>points[key]?.intensity>0&&points[key]?.tflops>0);
- $('#point-scope').innerHTML=visible.map(key=>{const p=points[key];return `<div data-point-summary="${key}"><b style="color:${colors[key]}">${labels[key]}</b><span>${time(key==='all'?data.timings.total_ms:data.timings[key])} (${data.timings.source==='unprofiled'?'실측':'수집 중 측정'})</span><span>AI ${num(p.intensity)} FLOP/byte · ${num(p.tflops,5)} TFLOP/s</span><small>${p.source==='estimated'?`${data.estimate_scope?.startsWith('projection GEMMs only')?'Projection':'모델'} 연산량 기준: AI = 연산량 ÷ 논리적 트래픽, 처리량 = 연산량 ÷ 위 실행 시간.${data.estimate_scope?.startsWith('projection GEMMs only')?' Attention·DeltaNet 등 제외.':''}`:'카운터 기준: AI = 연산량 ÷ DRAM 트래픽, 처리량 = 연산량 ÷ 위 실행 시간.'}</small></div>`}).join('');
- const messages={not_executed:'출력 1토큰은 prefill에서 생성되므로 실제 decode 호출이 없습니다. 출력 토큰 수를 2 이상으로 수집하세요.',missing_data:'이 실행에는 해당 구간의 커널 또는 비용 추정 데이터가 없습니다.',missing_duration:'해당 구간의 실행 시간을 수집하지 못했습니다.',missing_counters_or_nonpositive_work:'연산량·메모리 트래픽이 부족하거나 0이어서 로그 축 위치를 표시할 수 없습니다.'};
+ $('#point-scope').innerHTML=visible.map(key=>{const p=points[key];return `<div data-point-summary="${key}"><b style="color:${colors[key]}">${labels[key]}</b><span>${time(key==='all'?data.timings.total_ms:data.timings[key])} (${data.timings.source==='unprofiled'?'실측':'수집 중 측정'})</span><span>AI ${num(p.intensity)} FLOP/byte · ${num(p.tflops,5)} TFLOP/s</span><small>${p.source==='estimated'?'모델 계산':'카운터'} 기준 · AI = 연산량 ÷ 트래픽, 처리량 = 연산량 ÷ 위 실행 시간.</small></div>`}).join('');
+ const messages={not_executed:'해당 구간은 실행되지 않았습니다.',missing_data:'이 실행에는 해당 구간의 커널 또는 비용 추정 데이터가 없습니다.',missing_duration:'해당 구간의 실행 시간을 수집하지 못했습니다.',missing_counters_or_nonpositive_work:'연산량·메모리 트래픽이 부족하거나 0이어서 로그 축 위치를 표시할 수 없습니다.'};
  const missing=keys.filter(key=>key!=='all'&&!points[key]);
  $('#phase-notice').textContent=missing.map(key=>`${labels[key]}: ${messages[data.phase_point_reasons?.[key]]||data.phase_point_reasons?.[key]||messages.missing_data}`).join(' ');
- if(!hw.bandwidth){$('#roofline').innerHTML='<div class="empty">GPU 사양을 확인할 수 없어 roofline을 계산할 수 없습니다.</div>';return}
+ if(!hw.bandwidth){$('#roofline').innerHTML='<div class="empty">하드웨어 성능 정보를 확인할 수 없어 Roofline을 계산할 수 없습니다.</div>';return}
  const W=850,H=350,L=65,R=30,T=28,B=47;
  let xmin=-2,xmax=5,ymin=-5,ymax=3;
  // Keep axes stable across phase switches for direct visual comparison.
@@ -57,7 +56,7 @@ function roofline(){
  const roofs=[['BF16 Tensor',hw.peaks?.bf16_tensor/1e12,'#8dd5b2'],['FP16 Tensor',hw.peaks?.fp16_tensor/1e12,'#8dd5b2']].filter((r,i,rows)=>r[1]>0&&(i!==1||r[1]!==rows[0][1]));
  if(hw.peaks?.bf16_tensor>0&&hw.peaks.bf16_tensor===hw.peaks.fp16_tensor)roofs[0][0]='BF16 / FP16 Tensor';
  roofs.forEach(([name,peak,color],i)=>{const ridge=peak*1e12/hw.bandwidth;const xa=10**xmin;s+=`<path d="M${x(xa)},${y(xa*hw.bandwidth/1e12)} L${x(ridge)},${y(peak)} L${W-R},${y(peak)}" fill="none" stroke="${color}" stroke-width="1.8"/><text x="${W-R-5}" y="${y(peak)-(i===1?-14:7)}" text-anchor="end" style="fill:${color};font-size:10px">${name} · ${peak} T</text>`});
- s+=`<text x="${L+15}" y="${T+18}">HBM ${num(hw.bandwidth/1e12,3)} TB/s</text>`;
+ s+=`<text x="${L+15}" y="${T+18}">메모리 대역폭 ${num(hw.bandwidth/1e12,3)} TB/s</text>`;
  const offsets={all:5,prefill:-15,decode:24};
  visible.forEach(key=>{const p=points[key],px=x(p.intensity),py=y(p.tflops),color=colors[key];
  let marker=key==='prefill'?`<rect x="${px-5}" y="${py-5}" width="10" height="10"/>`:key==='decode'?`<path d="M${px},${py-7} l7,7 l-7,7 l-7,-7 Z"/>`:`<circle cx="${px}" cy="${py}" r="5"/>`;
@@ -96,7 +95,7 @@ function renderExecution(){
   ['GPU',`${run.hardware.name}${run.hardware.memory_gib!=null?` · VRAM ${num(run.hardware.memory_gib)} GiB`:''}`],
   ['실행 방식',modes[c.runner]||c.runner],
   ['정밀도 / 최적화',`${c.dtype?.toUpperCase()||'미기록'} · 양자화 ${c.quantization===null?'사용 안 함':c.quantization??'미기록'} · MTP ${flag(c.mtp_enabled)}`],
-  ['입출력',`Batch ${c.batch} · 입력 ${num(c.input_tokens,0)}토큰 · 출력 ${num(c.output_tokens,0)}토큰${c.runner?.includes('plain_cudagraph')?` (첫 토큰은 prefill, decode ${num(Math.max(0,c.output_tokens-1),0)}회)`:''}`],
+  ['입출력',`Batch ${c.batch} · 입력 ${num(c.input_tokens,0)}토큰 · 출력 ${num(c.output_tokens,0)}토큰`],
  ];
  if(contract.reference)rows.push(['정확성 기준',/\bHF\b.*\bBF16\b.*\beager\b/i.test(contract.reference)?'공식 HF BF16 eager mode':contract.reference]);
  if(versions.torch||versions.cuda)rows.push(['실행 환경',`PyTorch ${versions.torch||'미기록'} · CUDA ${versions.cuda||'미기록'}`]);
