@@ -1,0 +1,203 @@
+{
+  "commands": [
+    {
+      "args": [
+        "nsys",
+        "--version"
+      ],
+      "returncode": 0,
+      "log": "nsys-version.txt"
+    },
+    {
+      "args": [
+        "ncu",
+        "--version"
+      ],
+      "returncode": 0,
+      "log": "ncu-version.txt"
+    },
+    {
+      "args": [
+        "ncu",
+        "--query-metrics",
+        "--query-metrics-mode",
+        "base"
+      ],
+      "returncode": 0,
+      "log": "available-metrics.txt"
+    },
+    {
+      "args": [
+        "ncu",
+        "--profile-from-start",
+        "off",
+        "--target-processes",
+        "all",
+        "--filter-mode",
+        "per-launch-config",
+        "--kernel-name-base",
+        "demangled",
+        "--kernel-id",
+        ":::1",
+        "--cache-control",
+        "none",
+        "--clock-control",
+        "none",
+        "--metrics",
+        "dram__bytes_read.sum,dram__bytes_write.sum,gpu__time_duration.sum,smsp__sass_thread_inst_executed_op_fadd_pred_on.sum,smsp__sass_thread_inst_executed_op_fmul_pred_on.sum,smsp__sass_thread_inst_executed_op_ffma_pred_on.sum,smsp__sass_thread_inst_executed_op_hadd_pred_on.sum,smsp__sass_thread_inst_executed_op_hmul_pred_on.sum,smsp__sass_thread_inst_executed_op_hfma_pred_on.sum,sm__ops_path_tensor_src_fp16_bf16_tf32_dst_fp32.sum,sm__ops_path_tensor_src_fp16_dst_fp16.sum",
+        "-o",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-prefill",
+        "/usr/bin/python3",
+        "/content/kwb-bounds-20261107/scripts/profile.py",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07",
+        "--model",
+        "qwen3_5",
+        "--output",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile",
+        "--worker",
+        "counters",
+        "--counter-phase",
+        "prefill"
+      ],
+      "returncode": 0,
+      "log": "counters-prefill.log"
+    },
+    {
+      "args": [
+        "ncu",
+        "--import",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-prefill.ncu-rep",
+        "--page",
+        "raw",
+        "--csv",
+        "--print-units",
+        "base",
+        "--rename-kernels",
+        "off"
+      ],
+      "returncode": 0,
+      "log": "counters-prefill.csv"
+    },
+    {
+      "args": [
+        "ncu",
+        "--profile-from-start",
+        "off",
+        "--target-processes",
+        "all",
+        "--filter-mode",
+        "per-launch-config",
+        "--kernel-name-base",
+        "demangled",
+        "--kernel-id",
+        ":::1",
+        "--cache-control",
+        "none",
+        "--clock-control",
+        "none",
+        "--metrics",
+        "dram__bytes_read.sum,dram__bytes_write.sum,gpu__time_duration.sum,smsp__sass_thread_inst_executed_op_fadd_pred_on.sum,smsp__sass_thread_inst_executed_op_fmul_pred_on.sum,smsp__sass_thread_inst_executed_op_ffma_pred_on.sum,smsp__sass_thread_inst_executed_op_hadd_pred_on.sum,smsp__sass_thread_inst_executed_op_hmul_pred_on.sum,smsp__sass_thread_inst_executed_op_hfma_pred_on.sum,sm__ops_path_tensor_src_fp16_bf16_tf32_dst_fp32.sum,sm__ops_path_tensor_src_fp16_dst_fp16.sum",
+        "-o",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-decode",
+        "/usr/bin/python3",
+        "/content/kwb-bounds-20261107/scripts/profile.py",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07",
+        "--model",
+        "qwen3_5",
+        "--output",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile",
+        "--worker",
+        "counters",
+        "--counter-phase",
+        "decode"
+      ],
+      "returncode": 0,
+      "log": "counters-decode.log"
+    },
+    {
+      "args": [
+        "ncu",
+        "--import",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-decode.ncu-rep",
+        "--page",
+        "raw",
+        "--csv",
+        "--print-units",
+        "base",
+        "--rename-kernels",
+        "off"
+      ],
+      "returncode": 0,
+      "log": "counters-decode.csv"
+    },
+    {
+      "args": [
+        "ncu",
+        "--profile-from-start",
+        "off",
+        "--target-processes",
+        "all",
+        "--filter-mode",
+        "per-launch-config",
+        "--kernel-name-base",
+        "demangled",
+        "--kernel-id",
+        ":::1",
+        "--cache-control",
+        "none",
+        "--clock-control",
+        "none",
+        "--metrics",
+        "dram__bytes_read.sum,dram__bytes_write.sum,gpu__time_duration.sum,smsp__sass_thread_inst_executed_op_fadd_pred_on.sum,smsp__sass_thread_inst_executed_op_fmul_pred_on.sum,smsp__sass_thread_inst_executed_op_ffma_pred_on.sum,smsp__sass_thread_inst_executed_op_hadd_pred_on.sum,smsp__sass_thread_inst_executed_op_hmul_pred_on.sum,smsp__sass_thread_inst_executed_op_hfma_pred_on.sum,sm__ops_path_tensor_src_fp16_bf16_tf32_dst_fp32.sum,sm__ops_path_tensor_src_fp16_dst_fp16.sum",
+        "-o",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-unknown",
+        "/usr/bin/python3",
+        "/content/kwb-bounds-20261107/scripts/profile.py",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07",
+        "--model",
+        "qwen3_5",
+        "--output",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile",
+        "--worker",
+        "counters",
+        "--counter-phase",
+        "unknown"
+      ],
+      "returncode": 0,
+      "log": "counters-unknown.log"
+    },
+    {
+      "args": [
+        "ncu",
+        "--import",
+        "/content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-unknown.ncu-rep",
+        "--page",
+        "raw",
+        "--csv",
+        "--print-units",
+        "base",
+        "--rename-kernels",
+        "off"
+      ],
+      "returncode": 0,
+      "log": "counters-unknown.csv"
+    }
+  ],
+  "warnings": [],
+  "timing_source": "separate_nsight_collection",
+  "flop_metric_plan": {
+    "required": [
+      "smsp__sass_thread_inst_executed_op_fadd_pred_on.sum",
+      "smsp__sass_thread_inst_executed_op_fmul_pred_on.sum",
+      "smsp__sass_thread_inst_executed_op_ffma_pred_on.sum",
+      "smsp__sass_thread_inst_executed_op_hadd_pred_on.sum",
+      "smsp__sass_thread_inst_executed_op_hmul_pred_on.sum",
+      "smsp__sass_thread_inst_executed_op_hfma_pred_on.sum",
+      "sm__ops_path_tensor_src_fp16_bf16_tf32_dst_fp32.sum",
+      "sm__ops_path_tensor_src_fp16_dst_fp16.sum"
+    ],
+    "missing": []
+  },
+  "timeline_complete": false,
+  "counter_report_available": true
+}

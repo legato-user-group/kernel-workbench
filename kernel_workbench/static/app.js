@@ -32,8 +32,8 @@ function render(){
  $('#tree').querySelectorAll('button').forEach(b=>b.onclick=()=>{moduleId=b.dataset.module;render()});
  $('#gpu-name').textContent=data.hardware.name;
  roofline();table();renderEstimates();renderExperiments();
- $('#step').innerHTML='<option value="all">모든 decode 단계</option>'+[...new Set(data.kernels.map(k=>k.step).filter(k=>k!=null))].map(s=>`<option value="${s}">Decode ${s}</option>`).join('');
- $('#diagnostics').textContent=JSON.stringify({config:data.config,coverage:data.coverage,versions:data.versions,timings:data.timings,warnings:data.warnings,hardware:data.hardware},null,2);
+ $('#step').innerHTML='<option value="all">모든 decode 단계</option>'+[...new Set(data.kernels.flatMap(k=>k.steps?.length?k.steps.map(s=>s.step):k.step==null?[]:[k.step]))].sort((a,b)=>a-b).map(s=>`<option value="${s}">Decode ${s}</option>`).join('');
+ $('#diagnostics').textContent=JSON.stringify({config:data.config,coverage:data.coverage,profiling:data.profiling,versions:data.versions,timings:data.timings,warnings:data.warnings,hardware:data.hardware},null,2);
  $('#downloads').innerHTML=runId==='example'?'':(data.artifacts||['result.json','artifacts.tar.gz','commands.log']).map(n=>`<a href="/api/runs/${runId}/artifacts/${n}">${n} ↓</a>`).join('');
 }
 function roofline(){
@@ -79,13 +79,17 @@ function setPhase(next){
 function table(){
  $('#bound').disabled=!data.kernels.length;$('#step').disabled=!data.kernels.length;
  if(!data.kernels.length&&data.kernel_plan?.length){implementationTable();return}
- $('#kernel-evidence').textContent=data.kernels.length?'실측 GPU 커널 · 수집 프로파일 기준':'커널 프로파일 미수집 · 실측 시간과 호출 수 없음';
+ const profile=data.profiling;
+ $('#kernel-evidence').textContent=data.kernels.length?profile?`실측 GPU 커널 · ${profile.decode_steps}회 decode · 토큰당 ${num(profile.phases.decode.launches/profile.decode_steps,0)} launch · ${profile.module_count?`${profile.module_count}개 레이어·연산 범위 · NVTX + graph node로 귀속 확인`:'모듈 귀속 미확인은 unattributed'}. ${profile.bounds_samples?`하한: ${profile.bounds_groups}/${data.kernels.length}그룹에 형상별 카운터 표본 연결(레이어 간 공유) · decode 표본은 0번째 단계 · 전체 트래픽으로 환산하지 않음`:`전체 FLOPs·DRAM 카운터 미수집${profile.counter_sample?` · 별도 ${profile.counter_sample.launches}-launch 카운터 표본`:''}`}`:'실측 GPU 커널 · 수집 프로파일 기준':'커널 프로파일 미수집 · 실측 시간과 호출 수 없음';
  const q=$('#search').value.toLowerCase(),bound=$('#bound').value,step=$('#step').value,groups=new Map();
- for(const k of data.kernels){if(phase!=='all'&&k.phase!==phase||moduleId&&!matchesModule(k.module)||bound!=='all'&&k.bound!==bound||step!=='all'&&String(k.step)!==step||!`${k.name} ${moduleLabel(k,data.config)}`.toLowerCase().includes(q))continue;
- const key=JSON.stringify([k.name,k.phase,k.module,k.grid,k.block,k.bound]);if(!groups.has(key))groups.set(key,{...k,calls:[],duration_ms:0});const g=groups.get(key);g.calls.push(k);g.duration_ms+=k.duration_ms;}
+ for(let k of data.kernels){
+ if(step!=='all'&&k.steps?.length){const selected=k.steps.find(s=>String(s.step)===step);if(!selected)continue;k={...k,...selected,steps:[]};if(k.bounds_source==='measured_sample'&&k.bounds_reference_step!=null&&String(k.bounds_reference_step)!==step)k={...k,bound:'unknown',compute_ms:null,memory_ms:null,lower_ms:null,bounds_reason:`선택한 단계의 카운터 미수집 · 표본은 decode ${k.bounds_reference_step} 단계`}}
+ if(phase!=='all'&&k.phase!==phase||moduleId&&!matchesModule(k.module)||bound!=='all'&&k.bound!==bound||step!=='all'&&String(k.step)!==step||!`${k.name} ${moduleLabel(k,data.config)}`.toLowerCase().includes(q))continue;
+ const key=JSON.stringify([k.name,k.phase,k.module,k.grid,k.block,k.bound]);if(!groups.has(key))groups.set(key,{...k,calls:[],call_count:0,duration_ms:0});const g=groups.get(key);g.calls.push(k);g.call_count+=k.calls??1;g.duration_ms+=k.duration_ms;}
  const sorted=[...groups.values()];$('#count').textContent=`${sorted.length} 커널 그룹 · 모델 구조 순서`;
- renderKernelTree(sorted,(g,i,depth)=>`<tr class="expandable kernel-tree-leaf" tabindex="0" aria-expanded="false" aria-level="${depth+1}" data-group="${i}"><td style="padding-left:${18+depth*16}px"><b title="${esc(g.name)}">▸ ${esc(g.name.length>95?g.name.slice(0,95)+'…':g.name)}</b>${g.module==='unattributed'?`<small class="operation-hint">${esc(moduleLabel(g,data.config))}</small>`:''}</td><td>${esc(g.phase)}</td><td>${g.calls.length}</td><td>${time(g.duration_ms)}</td><td><span class="bound ${g.bound}">${g.bound==='unknown'?'미확인':g.bound+'-bound'}</span></td><td>${time(g.compute_ms)}<small> / call</small></td><td>${time(g.memory_ms)}<small> / call</small></td><td>${time(g.lower_ms)}<small> / call</small></td></tr>`);
- $('#rows').querySelectorAll('[data-group]').forEach(row=>{const toggle=()=>{if(row.nextElementSibling?.classList.contains('detail')){row.nextElementSibling.remove();row.setAttribute('aria-expanded','false');return}const g=sorted[+row.dataset.group];const tr=document.createElement('tr');tr.className='detail';tr.innerHTML=`<td colspan="8">하한은 첫 호출 기준입니다. 호출별 세부 정보:<pre>${esc(JSON.stringify(g.calls.map(k=>({name:k.name,step:k.step,duration_ms:k.duration_ms,flops:k.flops,dram_bytes:k.bytes,source:k.source,compute_ms:k.compute_ms,memory_ms:k.memory_ms,lower_ms:k.lower_ms,grid:k.grid,block:k.block})),null,2))}</pre></td>`;row.after(tr);row.setAttribute('aria-expanded','true')};row.onclick=toggle;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}}});
+ const lowerCell=(g,key)=>`<td title="${esc(g.bounds_reason||'')}" >${g[key]==null?`<span class="muted">${g.bounds_reason?.startsWith('선택한 단계')?'선택 단계 미수집':key==='compute_ms'?'FLOPs 미수집':key==='memory_ms'?'DRAM 미수집':'산출 불가'}</span>`:`${time(g[key])}<small> / ${g.bounds_source==='measured_sample'?'표본':'call'}</small>`}</td>`;
+ renderKernelTree(sorted,(g,i,depth)=>`<tr class="expandable kernel-tree-leaf" tabindex="0" aria-expanded="false" aria-level="${depth+1}" data-group="${i}"><td style="padding-left:${18+depth*16}px"><b title="${esc(g.name)}">▸ ${esc(g.name.length>95?g.name.slice(0,95)+'…':g.name)}</b>${g.module==='unattributed'?`<small class="operation-hint">${esc(moduleLabel(g,data.config))}</small>`:''}</td><td>${esc(g.phase)}</td><td>${num(g.call_count,0)}</td><td>${time(g.duration_ms)}</td><td><span title="${esc(g.bounds_reason||'')}" class="bound ${g.bound}">${g.bound==='unknown'?(g.bounds_source==='measured_sample'?'미분류':'카운터 미수집'):g.bound+'-bound'}</span>${g.bound!=='unknown'&&g.bounds_source==='measured_sample'?'<small>표본 · roofline</small>':''}</td>${lowerCell(g,'compute_ms')}${lowerCell(g,'memory_ms')}${lowerCell(g,'lower_ms')}</tr>`);
+ $('#rows').querySelectorAll('[data-group]').forEach(row=>{const toggle=()=>{if(row.nextElementSibling?.classList.contains('detail')){row.nextElementSibling.remove();row.setAttribute('aria-expanded','false');return}const g=sorted[+row.dataset.group];const tr=document.createElement('tr');tr.className='detail';tr.innerHTML=`<td colspan="8">시간·호출 수는 전체 타임라인 집계이며, 하한은 별도 카운터 표본 기준입니다.<pre>${esc(JSON.stringify(g.calls.map(k=>({name:k.name,module:k.module,module_source:k.module_source,step:k.step,calls:k.calls??1,duration_ms:k.duration_ms,steps:k.steps,flops:k.flops,dram_bytes:k.bytes,source:k.source,compute_ms:k.compute_ms,memory_ms:k.memory_ms,lower_ms:k.lower_ms,bounds_reason:k.bounds_reason,counter_samples:k.counter_samples,grid:k.grid,block:k.block})),null,2))}</pre></td>`;row.after(tr);row.setAttribute('aria-expanded','true')};row.onclick=toggle;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}}});
 }
 function renderKernelTree(rows,leaf){
  if(!rows.length){$('#rows').innerHTML='<tr><td colspan="8" class="empty">선택한 조건에 해당하는 커널 또는 구현 경로가 없습니다.</td></tr>';return}
@@ -107,7 +111,7 @@ function renderRunSelectors(){
  $('#runner').innerHTML='<option value="example">예제 · 화면 검증</option>'+families.map(id=>`<option value="${esc(id)}">${esc(id)}</option>`).join('');
  $('#runner').value=family;
  const rows=selectableResults(runRecords,experimentRecords).filter(r=>(r.runner_id||r.config.runner)===family);
- $('#runs').innerHTML=family==='example'?'<option value="example">예제</option>':rows.map(r=>`<option value="${esc(r.id)}">${r.config.input_tokens} → ${r.config.output_tokens} tokens · ${esc(r.config.runner)}</option>`).join('');
+ $('#runs').innerHTML=family==='example'?'<option value="example">예제</option>':rows.map(r=>`<option value="${esc(r.id)}">${r.config.input_tokens} → ${r.config.output_tokens} tokens · ${esc(r.config.runner)}${r.data_directory?` · ${esc(r.data_directory.split('/').at(-1))}`:''}</option>`).join('');
  $('#runs').value=runId||'';
  $('#runs').hidden=rows.length<=1;
  $('#runs').disabled=!rows.length;
@@ -149,6 +153,7 @@ async function refresh(){
  runRecords=runs.filter(r=>r.status==='completed');experimentRecords=experiments;
  const latest=selectableResults(runRecords,experimentRecords)[0];
  if(follow&&latest&&latest.id!==runId)await load(latest.id);
+ else if(runId!=='example'&&runRecords.some(r=>r.id===runId&&r.evidence_revision!==data?.evidence_revision))await load(runId);
  else if(follow&&!latest&&runRecords.length)await showRunner(runRecords[0].runner_id||runRecords[0].config.runner);
  else {renderRunSelectors();renderExperiments()}
  $('#status').textContent=latest?.cleanup_error?'세션 종료 실패: '+latest.cleanup_error:'';

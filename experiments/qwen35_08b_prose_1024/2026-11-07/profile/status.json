@@ -1,0 +1,98 @@
+{
+  "commands": [
+    {
+      "args": [
+        "nsys",
+        "--version"
+      ],
+      "returncode": 0,
+      "log": "nsys-version.txt"
+    },
+    {
+      "args": [
+        "ncu",
+        "--version"
+      ],
+      "returncode": 0,
+      "log": "ncu-version.txt"
+    },
+    {
+      "args": [
+        "nsys",
+        "profile",
+        "--trace=cuda,nvtx",
+        "--sample=none",
+        "--cpuctxsw=none",
+        "--cuda-graph-trace=node",
+        "--capture-range=cudaProfilerApi",
+        "--capture-range-end=stop",
+        "-o",
+        "/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace",
+        "/usr/bin/python3",
+        "/content/kwb-profile-20261107/scripts/profile.py",
+        "/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07",
+        "--model",
+        "qwen3_5",
+        "--worker",
+        "timeline"
+      ],
+      "returncode": 139,
+      "log": "nsys.log"
+    },
+    {
+      "args": [
+        "nsys",
+        "export",
+        "--type=sqlite",
+        "--output=/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace.sqlite",
+        "/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace.nsys-rep"
+      ],
+      "returncode": 0,
+      "log": "nsys-export.log"
+    },
+    {
+      "args": [
+        "ncu",
+        "--profile-from-start",
+        "off",
+        "--target-processes",
+        "all",
+        "--launch-count",
+        "32",
+        "--cache-control",
+        "none",
+        "--clock-control",
+        "none",
+        "--metrics",
+        "dram__bytes_read.sum,dram__bytes_write.sum,gpu__time_duration.sum",
+        "-o",
+        "/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters",
+        "/usr/bin/python3",
+        "/content/kwb-profile-20261107/scripts/profile.py",
+        "/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07",
+        "--model",
+        "qwen3_5",
+        "--worker",
+        "counters"
+      ],
+      "returncode": 0,
+      "log": "ncu.log"
+    },
+    {
+      "args": [
+        "ncu",
+        "--import",
+        "/content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters.ncu-rep",
+        "--page",
+        "raw",
+        "--csv"
+      ],
+      "returncode": 0,
+      "log": "counters.csv"
+    }
+  ],
+  "warnings": [
+    "nsys.log: command failed (139)"
+  ],
+  "timing_source": "separate_nsight_collection"
+}

@@ -1,0 +1,7 @@
+{
+  "mtp_loaded": false,
+  "quantization": null,
+  "fused_projection_groups": 48,
+  "layers": 24,
+  "dtype": "torch.float16"
+}

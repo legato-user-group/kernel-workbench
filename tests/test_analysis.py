@@ -112,3 +112,34 @@ def test_zero_traffic_phase_not_plotted():
     result={'point':None,'config':{'output_tokens':2},'timings':{'prefill':1,'decode':2},'estimates':[],
             'kernels':[{'phase':'decode','source':'measured','flops':{'fp32':20},'bytes':0}]}
     assert with_phase_points(result)['phase_points']['decode'] is None
+
+
+def test_graph_kernel_inherits_capture_module_through_clones(tmp_path):
+    path = tmp_path / 'trace.sqlite'
+    db = sqlite3.connect(path)
+    db.executescript('''
+        CREATE TABLE StringIds(id INTEGER,value TEXT);
+        INSERT INTO StringIds VALUES(1,'gemv'),(2,'copy');
+        CREATE TABLE NVTX_EVENTS(start INTEGER,end INTEGER,globalTid INTEGER,text TEXT);
+        INSERT INTO NVTX_EVENTS VALUES(10,40,1,'module:layer.0.mlp'),
+              (11,39,1,'module:layer.0.mlp.gate_up_proj'),
+              (100,150,1,'inference'),(101,149,1,'phase:decode'),(110,140,1,'step:0'),
+              (111,139,1,'module:execution.decode');
+        CREATE TABLE CUDA_GRAPH_NODE_EVENTS(start INTEGER,end INTEGER,globalTid INTEGER,
+              graphNodeId INTEGER,originalGraphNodeId INTEGER);
+        INSERT INTO CUDA_GRAPH_NODE_EVENTS VALUES(20,20,1,100,NULL),(45,45,1,101,100),(115,115,1,102,101);
+        CREATE TABLE CUPTI_ACTIVITY_KIND_RUNTIME(start INTEGER,end INTEGER,globalTid INTEGER,correlationId INTEGER);
+        INSERT INTO CUPTI_ACTIVITY_KIND_RUNTIME VALUES(120,121,1,7),(20,21,1,8);
+        CREATE TABLE CUPTI_ACTIVITY_KIND_KERNEL(start INTEGER,end INTEGER,correlationId INTEGER,
+              shortName INTEGER,graphNodeId INTEGER);
+        INSERT INTO CUPTI_ACTIVITY_KIND_KERNEL VALUES(1000,2000,7,1,102),(2000,3000,7,2,NULL),
+                                                        (40,90,8,1,100);
+    ''')
+    db.close()
+    kernels = read_nsys(path)
+    assert len(kernels) == 2  # Capture warmup is not counted as inference.
+    assert kernels[0]['module'] == 'layer.0.mlp.gate_up_proj'
+    assert kernels[0]['module_source'] == 'graph_creation_nvtx'
+    assert kernels[0]['phase'] == 'decode' and kernels[0]['step'] == 0
+    assert kernels[1]['module'] == 'execution.decode'
+    assert kernels[1]['module_source'] == 'launch_nvtx'

@@ -1,0 +1,25 @@
+{
+  "files": {
+    "models/common/__init__.py": "59e8b2cf5bc59f0266b090f9fa1b67479bc157f7edffaac144e216e3ee3c7e91",
+    "models/common/timing.py": "625fbaf66a172ea4080ecbacdb68dc2e207a831f963ae0bbe8215d54adb4ef1e",
+    "models/qwen3_5/__init__.py": "fae1d2f5a9e610789a1da5576602f2a9b96db02d3b0a307d8092f2362472b615",
+    "models/qwen3_5/analysis.py": "d7d3ea4f80460b4c484c516fe99efd32ce55e5194ab5f85f3f3e0313f84c760f",
+    "models/qwen3_5/attention_kernels.py": "79f7552d17f93274b2173eac390cdf264c166821eb937f1014d47c64d52a3097",
+    "models/qwen3_5/checkpoint_evaluation.py": "6fb44c904f03a9893709302e392d8af7b990d1fad8183e2664e24c9a557f0f10",
+    "models/qwen3_5/config.json": "f8d190c5b89c1521220f935d2567a587d6e291ed69066a45a106560b05a2174c",
+    "models/qwen3_5/evaluation.py": "6218a2aa50608dfa9c302522e809f87ae2b47ec9ab490020c809c6efa3442265",
+    "models/qwen3_5/experiment.py": "aca86050180b9fe2dd62069a61f5273a3bcf4abf91ab9a286289578b572d1c0a",
+    "models/qwen3_5/gated_delta_kernels.py": "75d801895bf0d8f6742be7d452361170bbf651976765831c91f6960fc2fde40b",
+    "models/qwen3_5/inductor_choices.py": "091a11a0ff80d2b2790f6c86e3639c4c04049743579dedda4cff4ee67322446b",
+    "models/qwen3_5/model.py": "5e6c5b78a20fed65a4e9ab2e51c3409537f3ad3571f040069aae84ace612d774",
+    "models/qwen3_5/moe.py": "4e02ad8a9334801d4f94c78967ee0a229ad11c676c23d9c1746f65fdf06bdf43",
+    "models/qwen3_5/moe_kernels.py": "caba7344d7d287cb2d49a39e7a96db7240f14f5cb622939c897206eb51e44b46",
+    "models/qwen3_5/nvfp4.py": "b51d791b03f2db5a603fb26316df6f4aca926d85014f4b93ff0234260e782598",
+    "models/qwen3_5/provenance.json": "4a33882542424658bc92b92bf552eb2477cdcdbd7baf3075328c95f2a9c6e7b8",
+    "models/qwen3_5/quant.py": "fa1b602c4c00c203697ee39543b008f5778b5971fda20161b3fbc9fd859176cc",
+    "models/qwen3_5/quant_kernels.py": "acc7ce4be2366032684cb854640ee24ee8f5b426431930fa8b175e9c6c00c87d",
+    "models/qwen3_5/speculative.py": "7eb136fe1489a1f8d47e8ad43589cc8817e88f5e11a1b56eb0891e4451465670",
+    "models/qwen3_5/validation.py": "1e4c19cf1382e70e113e50345cd3587890b4c1ec5cc2e6d396192be19ae325be",
+    "experiment.json": "167b723765be49cdad754c3ed12f25044506431f462402648c9df341677ebe21"
+  }
+}

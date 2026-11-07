@@ -1,0 +1,61 @@
+{
+  "commands": [
+    {
+      "args": [
+        "nsys",
+        "--version"
+      ],
+      "returncode": 0,
+      "log": "nsys-version.txt"
+    },
+    {
+      "args": [
+        "ncu",
+        "--version"
+      ],
+      "returncode": 0,
+      "log": "ncu-version.txt"
+    },
+    {
+      "args": [
+        "nsys",
+        "profile",
+        "--trace=cuda,nvtx",
+        "--sample=none",
+        "--cpuctxsw=none",
+        "--cuda-graph-trace=node",
+        "--capture-range=cudaProfilerApi",
+        "--capture-range-end=stop",
+        "--kill=none",
+        "-o",
+        "/content/kwb-structure-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace",
+        "/usr/bin/python3",
+        "/content/kwb-structure-20261107/scripts/profile.py",
+        "/content/kwb-structure-20261107/experiments/qwen35_08b_prose_1024/2026-11-07",
+        "--model",
+        "qwen3_5",
+        "--output",
+        "/content/kwb-structure-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile",
+        "--worker",
+        "timeline"
+      ],
+      "returncode": 0,
+      "log": "nsys.log"
+    },
+    {
+      "args": [
+        "nsys",
+        "export",
+        "--type=sqlite",
+        "--output=/content/kwb-structure-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace.sqlite",
+        "/content/kwb-structure-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace.nsys-rep"
+      ],
+      "returncode": 0,
+      "log": "nsys-export.log"
+    }
+  ],
+  "warnings": [],
+  "timing_source": "separate_nsight_collection",
+  "timeline_complete": true,
+  "counter_report_available": false
+}

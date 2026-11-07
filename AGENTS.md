@@ -14,6 +14,7 @@
 - 대시보드는 `experiments/`의 원시 데이터를 직접 읽는다.
 - 모델 weight·캐시·생성 산출물·실험결과는 Git에서 제외한다.
 - 데모용 예외: `experiments/qwen35_08b_prose_1024/2026-11-06/`의 원시 결과·실행 메타데이터·요약은 Git에서 관리한다.
+- 프로파일링 예외: `experiments/qwen35_08b_prose_1024/2026-11-07/`의 SQLite·CSV·JSON 프로파일·평가 결과·수집 기록·요약은 Git에서 관리한다. Nsight 원본 보고서(`.nsys-rep`, `.ncu-rep`, 압축본 포함)는 Git에서 제외한다.
 
 # 검증
 

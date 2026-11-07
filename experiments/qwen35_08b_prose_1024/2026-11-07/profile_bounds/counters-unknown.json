@@ -1,0 +1,21 @@
+{
+  "engine": "fp16_plain_cudagraph",
+  "input_tokens": 1024,
+  "output_tokens": 256,
+  "checkpoint": "Qwen/Qwen3.5-0.8B",
+  "checkpoint_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "input_ids_sha256": "220f59fba4e5e4e7636fc99e0411a62e8ea05b97ead47d9ff8371615a57af854",
+  "decode_steps": 255,
+  "output_ids_sha256": "d2f72422e06ddb50994b66e6136d86bf32ae7dcda5b71909fcbe6389890e2242",
+  "matches_unprofiled_generation": true,
+  "matches_hf_greedy": true,
+  "correctness": {
+    "passed": true,
+    "source": "results/correctness.json",
+    "validation_scope": "reuse full HF/reset gate from this evaluation; profile output checked independently",
+    "positions": 256
+  },
+  "scope": "one warmed generation; graph decode; profiler timings are diagnostic",
+  "module_attribution": "unattributed; CUDA Graph replay has no Python module ranges",
+  "counter_phase": "unknown"
+}

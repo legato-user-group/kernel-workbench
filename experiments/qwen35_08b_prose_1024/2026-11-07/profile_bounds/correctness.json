@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "source": "results/correctness.json",
+  "validation_scope": "reuse full HF/reset gate from this evaluation; profile output checked independently",
+  "positions": 256
+}

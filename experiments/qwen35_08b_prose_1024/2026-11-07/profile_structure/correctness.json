@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "positions": 256,
+  "logits_sha256": "f1bb2249849102713533a27a1ada878d3cc74b7ec3fc00beacc26dc114b826f6",
+  "validation_scope": "exact full-logit hash and token equality to saved HF-validated candidate; independent reset replay"
+}

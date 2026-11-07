@@ -1,0 +1,37 @@
+==WARNING== Note: Running with uncontrolled GPU caches. Profiling results may be inconsistent.
+==WARNING== Note: Running with unmodified GPU clocks. If not controlled otherwise, profiling results may be inconsistent.
+==PROF== Connected to process 3301 (/usr/bin/python3.13)
+==PROF== Profiling "vectorized_gather_kernel" - 0 (1/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel_with_index" - 1 (2/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 2 (3/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 3 (4/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "unrolled_elementwise_kernel" - 4 (5/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 5 (6/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 6 (7/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 7 (8/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 8 (9/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "CatArrayBatchedCopy_vectorized" - 9 (10/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 10 (11/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 11 (12/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 12 (13/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "CatArrayBatchedCopy_vectorized" - 13 (14/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 14 (15/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 15 (16/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "unrolled_elementwise_kernel" - 16 (17/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 17 (18/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "reduce_kernel" - 18 (19/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 19 (20/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 20 (21/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 21 (22/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "unrolled_elementwise_kernel" - 22 (23/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 23 (24/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 24 (25/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 25 (26/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "turing_fp16_s1688gemm_fp16_12..." - 26 (27/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "Kernel2" - 27 (28/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "Kernel2" - 28 (29/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "vectorized_elementwise_kernel" - 29 (30/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "CatArrayBatchedCopy" - 30 (31/32): 0%....50%....100% - 1 pass
+==PROF== Profiling "elementwise_kernel" - 31 (32/32): 0%....50%....100% - 1 pass
+==PROF== Disconnected from process 3301
+==PROF== Report: /content/kwb-profile-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters.ncu-rep

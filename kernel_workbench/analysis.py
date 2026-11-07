@@ -20,7 +20,7 @@ PEAKS = {'fp32': 19.5e12, 'fp64': 9.7e12, 'bf16_tensor': 312e12,
 def hardware(name):
     key = name.upper().removeprefix('NVIDIA ').replace(' ', '-')
     if key in ('T4', 'TESLA-T4'):
-        return {'name': name, 'bandwidth': 300e9, 'peaks': {'fp32': 8.1e12, 'fp16_tensor': 65e12},
+        return {'name': name, 'bandwidth': 300e9, 'peaks': {'fp32': 8.1e12, 'fp16': 16.2e12, 'fp16_tensor': 65e12},
                 'source': 'NVIDIA T4 datasheet; theoretical, not measured ceilings',
                 'source_url': 'https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet-951643.pdf',
                 'supported': True}
@@ -37,10 +37,47 @@ def bounds(flops, traffic, hw):
     compute = max(v / hw['peaks'][k] for k, v in flops.items()) * 1000
     memory = traffic / hw['bandwidth'] * 1000
     return {'compute_ms': compute, 'memory_ms': memory, 'lower_ms': max(compute, memory),
-            'bound': 'compute' if compute >= memory else 'memory'}
+            'bound': ('compute' if compute >= memory else 'memory') if max(compute, memory) > 0 else 'unknown'}
+
+
+def flop_metric_plan(available, gpu):
+    """Arithmetic counters verified for Turing; never assume absent metrics are zero."""
+    t4 = gpu.upper().removeprefix('NVIDIA ').replace('TESLA ', '') == 'T4'
+    if not t4:
+        return {'required': [], 'missing': ['Arithmetic metric plan is currently verified on T4 only']}
+    names = {line.split()[0] for line in available.splitlines() if line.strip()}
+    scalar = [f'smsp__sass_thread_inst_executed_op_{prefix}{op}_pred_on.sum'
+              for prefix in ('f', 'h') for op in ('add', 'mul', 'fma')]
+    tensor32 = 'sm__ops_path_tensor_src_fp16_dst_fp32.sum'
+    if tensor32.rsplit('.', 1)[0] not in names:
+        # T4 cannot execute BF16 or TF32; its combined metric is FP16 only.
+        tensor32 = 'sm__ops_path_tensor_src_fp16_bf16_tf32_dst_fp32.sum'
+    required = scalar + [tensor32, 'sm__ops_path_tensor_src_fp16_dst_fp16.sum']
+    return {'required': required, 'missing': [m for m in required if m.rsplit('.', 1)[0] not in names]}
+
+
+def arithmetic_flops(metrics, required):
+    if not required or any(name not in metrics for name in required):
+        return None
+    values = {}
+    for path, prefix in [('fp32', 'f'), ('fp16', 'h')]:
+        names = [f'smsp__sass_thread_inst_executed_op_{prefix}{op}_pred_on.sum' for op in ('add', 'mul', 'fma')]
+        if not all(n in metrics for n in names):
+            return None
+        # CUPTI's PerfWorks mapping counts add + mul + 2*fma for both precisions.
+        values[path] = metrics[names[0]] + metrics[names[1]] + 2 * metrics[names[2]]
+    tensor = [n for n in required if n.startswith('sm__ops_path_tensor_')]
+    if not tensor:
+        return None
+    values['fp16_tensor'] = sum(metrics[n] for n in tensor)
+    return {path: value for path, value in values.items() if value > 0} or {'fp32': 0}
 
 
 def read_nsys(path):
+    return list(iter_nsys(path))
+
+
+def iter_nsys(path):
     """Read launch-side NVTX attribution; never join GPU timestamps to CPU ranges."""
     db = sqlite3.connect(f'file:{Path(path).resolve()}?mode=ro', uri=True)
     db.row_factory = sqlite3.Row
@@ -60,31 +97,64 @@ def read_nsys(path):
     apis = defaultdict(list)
     for api in launches:
         apis[api['correlationId']].append(api)
-    result = []
+    module_ranges = defaultdict(list)
+    for r in ranges:
+        if r['label'].startswith('module:'):
+            module_ranges[r.get('globalTid')].append(r)
+    graph_modules, originals = {}, {}
+    if 'CUDA_GRAPH_NODE_EVENTS' in tables:
+        for event in db.execute('SELECT * FROM CUDA_GRAPH_NODE_EVENTS ORDER BY start'):
+            event = dict(event)
+            node = event['graphNodeId']
+            if event.get('originalGraphNodeId') is not None:
+                originals[node] = event['originalGraphNodeId']
+                continue
+            containing = [r for r in module_ranges[event.get('globalTid')]
+                          if r['start'] <= event['start'] <= r['end']]
+            if containing:
+                graph_modules[node] = max(containing, key=lambda r: (r['start'], -r['end']))['label'][7:]
+
+    def graph_module(node):
+        visited = set()
+        while node is not None and node not in visited:
+            if node in graph_modules:
+                return graph_modules[node]
+            visited.add(node)
+            node = originals.get(node)
+        return None
+
+    attribution = {}
     for row in db.execute('SELECT * FROM CUPTI_ACTIVITY_KIND_KERNEL ORDER BY start'):
         k = dict(row)
-        candidates = apis[k['correlationId']]
-        # Process is encoded in globalTid; filter when globalPid exists in export.
-        candidates = [a for a in candidates if not k.get('globalPid') or
-                      a.get('globalTid', 0) >> 24 == k['globalPid'] >> 24]
-        matched = []
-        for api in candidates:
-            matched += [r for r in ranges if r.get('globalTid') == api.get('globalTid')
-                        and r['start'] <= api['start'] and r['end'] >= api['end']]
-        labels = [r['label'] for r in sorted(matched, key=lambda r: r['start'])]
+        key = k['correlationId'], k.get('globalPid')
+        if key not in attribution:
+            candidates = apis[k['correlationId']]
+            # All nodes of a graph replay share its launch-side annotation.
+            candidates = [a for a in candidates if not k.get('globalPid') or
+                          a.get('globalTid', 0) >> 24 == k['globalPid'] >> 24]
+            matched = []
+            for api in candidates:
+                matched += [r for r in ranges if r.get('globalTid') == api.get('globalTid')
+                            and r['start'] <= api['start'] and r['end'] >= api['end']]
+            attribution[key] = [r['label'] for r in sorted(matched, key=lambda r: r['start'])]
+        labels = attribution[key]
         if 'inference' not in labels:
             continue
         phase = next((v[6:] for v in labels if v.startswith('phase:')), 'unknown')
         module = next((v[7:] for v in reversed(labels) if v.startswith('module:')), 'unattributed')
+        captured_module = graph_module(k.get('graphNodeId'))
+        if captured_module:
+            module = captured_module
+        module_source = 'graph_creation_nvtx' if captured_module else 'launch_nvtx' if module != 'unattributed' else 'unavailable'
         step = next((int(v[5:]) for v in labels if v.startswith('step:')), None)
-        result.append({'name': strings.get(k.get('demangledName'), strings.get(k.get('shortName'), '?')),
+        yield {'name': strings.get(k.get('demangledName'), strings.get(k.get('shortName'), '?')),
                        'phase': phase, 'module': module, 'step': step,
+                       'module_source': module_source,
                        'grid': [k.get('gridX'), k.get('gridY'), k.get('gridZ')],
                        'block': [k.get('blockX'), k.get('blockY'), k.get('blockZ')],
                        'duration_ms': (k['end'] - k['start']) / 1e6,
-                       'start_ns': k['start'], 'flops': None, 'bytes': None, 'source': 'unavailable'})
+                       'start_ns': k['start'], 'flops': None, 'bytes': None, 'source': 'unavailable'}
     db.close()
-    return result
 
 
 def read_ncu(path):
@@ -93,10 +163,14 @@ def read_ncu(path):
     start = next((i for i,line in enumerate(lines) if '"Kernel Name"' in line and '"ID"' in line), None)
     if start is None: raise ValueError('No Nsight Compute CSV header')
     items = {}
+    wide_units = {}
     reader = csv.DictReader(io.StringIO('\n'.join(lines[start:])))
     for r in reader:
-        if not r.get('ID','').isdigit(): continue
-        item = items.setdefault(r['ID'], {'name':r['Kernel Name'],'metrics':{},'units':{},
+        if not r.get('ID','').isdigit():
+            if 'Metric Name' not in r:
+                wide_units.update({k: v for k, v in r.items() if '__' in k and v})
+            continue
+        item = items.setdefault(r['ID'], {'id': r['ID'], 'name':r['Kernel Name'],'metrics':{},'units':{},
             'grid':[int(v) for v in re.findall(r'\d+',r.get('Grid Size',''))],
             'block':[int(v) for v in re.findall(r'\d+',r.get('Block Size',''))]})
         pairs = [(r['Metric Name'],r['Metric Value'])] if 'Metric Name' in r else r.items()
@@ -104,7 +178,7 @@ def read_ncu(path):
             if '__' not in name or raw is None: continue
             try: value=float(raw.replace(',',''))
             except (ValueError,TypeError): continue
-            unit=r.get('Metric Unit','') if 'Metric Name' in r else ''
+            unit=r.get('Metric Unit','') if 'Metric Name' in r else wide_units.get(name, '')
             scale={'Kbyte':1e3,'Mbyte':1e6,'Gbyte':1e9,'Kinst':1e3,'Minst':1e6,'Ginst':1e9}.get(unit,1)
             item['metrics'][name]=value*scale
             item['units'][name]=unit

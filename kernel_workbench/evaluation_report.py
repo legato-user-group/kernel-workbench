@@ -52,6 +52,13 @@ def render_markdown(report):
         lines += ['미완료 표본과 검증 범위는 위 회수 횟수 및 원본 상태 파일에 기록한다.']
     lines += ['',
               '## 범위', '', *['- '+limit for limit in report['limits']],
-              '- Nsight/커널 프로파일과 FLOPs·DRAM 카운터는 아직 수집하지 않았다.',
               '- raw 표본·step별 오차·출력 hash는 `results/`의 원본 파일에서 확인한다.', '']
+    if isinstance(report['profiling'], list):
+        for profile in report['profiling']:
+            lines.append(f'- [{profile["directory"]}]({profile["status_file"]}): '
+                         f'타임라인 완료 {profile["timeline_complete"]}, 별도 카운터 표본 {profile["counter_report_available"]}.')
+        lines.append('- 프로파일 시간은 별도 진단값이다. 제한된 카운터 표본을 전체 생성의 FLOPs·DRAM 트래픽으로 환산하지 않는다.')
+    else:
+        lines.append('- Nsight/커널 프로파일과 FLOPs·DRAM 카운터는 아직 수집하지 않았다.')
+    lines.append('')
     return '\n'.join(lines)

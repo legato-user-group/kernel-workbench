@@ -1,0 +1,9 @@
+{
+  "sha256": "acdaf5ecff9ea6086c151285acefab65c7431edaf1524dce22a9d952871682ab",
+  "source": "scripts/profile_workload.py",
+  "applies_to": [
+    "counters-decode",
+    "counters-unknown"
+  ],
+  "change": "Reuse the same evaluation full HF/reset gate before NCU; captured output remains independently checked. Model arithmetic unchanged."
+}

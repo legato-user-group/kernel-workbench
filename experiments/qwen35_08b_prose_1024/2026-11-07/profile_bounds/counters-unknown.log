@@ -1,0 +1,7 @@
+==WARNING== Note: Running with uncontrolled GPU caches. Profiling results may be inconsistent.
+==WARNING== Note: Running with unmodified GPU clocks. If not controlled otherwise, profiling results may be inconsistent.
+==PROF== Connected to process 5701 (/usr/bin/python3.13)
+==PROF== Profiling "1:7:void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::Half, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3):1": 0%....50%....100% - 3 passes
+==PROF== Profiling "1:7:void at::native::<unnamed>::CatArrayBatchedCopy_alignedK_contig<at::native::<unnamed>::OpaqueType<(unsigned int)8>, unsigned int, (int)2, (int)128, (int)1, (int)16>(T1 *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2):1": 0%....50%....100% - 3 passes
+==PROF== Disconnected from process 5701
+==PROF== Report: /content/kwb-bounds-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/counters-unknown.ncu-rep

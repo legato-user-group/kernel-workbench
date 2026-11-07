@@ -46,7 +46,15 @@ def summarize_source(source):
                 and len(source.checks) == len(source.check_engines) * (len(contract['lengths']) + 1)
                 and (MTP not in source.engines or
                      all(source.read(f'results/mtp_parity_{n}.json') is not None for n in contract['lengths'])))
+    profiling = []
+    for path in sorted(source.directory.glob('profile*/status.json')):
+        relative = path.parent.relative_to(source.directory)
+        status = source.read(str(relative / 'status.json'))
+        profiling.append({'directory': str(relative),
+                          'timeline_complete': bool(status.get('timeline_complete')),
+                          'counter_report_available': any(path.parent.glob('counters*.csv')),
+                          'status_file': str(relative / 'status.json')})
     return {'complete': complete, 'exit': exit_state, 'session_status': source.read('session_status.json'),
             'environment': source.read('results/environment.json', {}), 'contract': contract, 'rows': rows,
             'correctness': source.correctness, 'validated_decode_comparisons': comparisons,
-            'profiling': 'not collected', 'limits': [contract.get('state_comparison', 'State comparison not recorded')]}
+            'profiling': profiling or 'not collected', 'limits': [contract.get('state_comparison', 'State comparison not recorded')]}

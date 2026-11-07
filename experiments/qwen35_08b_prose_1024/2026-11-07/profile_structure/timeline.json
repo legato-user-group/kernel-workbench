@@ -1,0 +1,3181 @@
+{
+  "engine": "fp16_plain_cudagraph",
+  "input_tokens": 1024,
+  "output_tokens": 256,
+  "checkpoint": "Qwen/Qwen3.5-0.8B",
+  "checkpoint_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "input_ids_sha256": "220f59fba4e5e4e7636fc99e0411a62e8ea05b97ead47d9ff8371615a57af854",
+  "decode_steps": 255,
+  "output_ids_sha256": "d2f72422e06ddb50994b66e6136d86bf32ae7dcda5b71909fcbe6389890e2242",
+  "matches_unprofiled_generation": true,
+  "matches_hf_greedy": true,
+  "correctness": {
+    "passed": true,
+    "positions": 256,
+    "logits_sha256": "f1bb2249849102713533a27a1ada878d3cc74b7ec3fc00beacc26dc114b826f6",
+    "validation_scope": "exact full-logit hash and token equality to saved HF-validated candidate; independent reset replay"
+  },
+  "scope": "one warmed generation; graph decode; profiler timings are diagnostic",
+  "module_structure": [
+    {
+      "id": "execution.model",
+      "label": "Decoder \uc2e4\ud589\u00b7\uc0c1\ud0dc",
+      "kind": "function",
+      "torch_path": "Qwen3_5ForCausalLM.decode_logits"
+    },
+    {
+      "id": "embedding",
+      "label": "Embedding",
+      "torch_path": "model.language_model.embed_tokens",
+      "kind": "nn.Module",
+      "weight_shape": [
+        248320,
+        1024
+      ]
+    },
+    {
+      "id": "position_embeddings",
+      "label": "Qwen3_5TextRotaryEmbedding",
+      "torch_path": "model.language_model.rotary_emb",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.0",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.0",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.0.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.0.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.0.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.0.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.0.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.0.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.0.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.0.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.0.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.0.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.0.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.0.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.0.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.0.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.0.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.0.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.0.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.0.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.0.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.0.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.1",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.1",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.1.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.1.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.1.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.1.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.1.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.1.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.1.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.1.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.1.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.1.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.1.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.1.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.1.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.1.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.1.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.1.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.1.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.1.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.1.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.1.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.1.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.1.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.1.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.1.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.1.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.1.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.2",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.2",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.2.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.2.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.2.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.2.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.2.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.2.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.2.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.2.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.2.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.2.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.2.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.2.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.2.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.2.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.2.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.2.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.2.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.2.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.2.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.2.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.2.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.2.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.2.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.2.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.2.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.2.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.3",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.3",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.3.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.3.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.3.self_attn",
+      "label": "Qwen3_5Attention",
+      "torch_path": "model.language_model.layers.3.self_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.3.self_attn.qkv_proj",
+      "label": "Linear \u00b7 1024 \u2192 5120",
+      "torch_path": "model.language_model.layers.3.self_attn.qkv_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        5120,
+        1024
+      ]
+    },
+    {
+      "id": "layer.3.self_attn.q_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.3.self_attn.q_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.3.self_attn.k_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.3.self_attn.k_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.3.self_attn.rope",
+      "label": "RoPE \uc801\uc6a9",
+      "kind": "function",
+      "torch_path": "apply_rotary_pos_emb"
+    },
+    {
+      "id": "layer.3.self_attn.attention",
+      "label": "Decode attention + KV",
+      "kind": "function",
+      "torch_path": "decode_attention"
+    },
+    {
+      "id": "layer.3.self_attn.o_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.3.self_attn.o_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.3.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.3.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.3.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.3.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.3.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.3.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.3.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.3.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.3.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.4",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.4",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.4.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.4.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.4.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.4.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.4.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.4.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.4.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.4.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.4.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.4.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.4.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.4.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.4.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.4.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.4.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.4.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.4.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.4.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.4.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.4.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.4.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.4.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.4.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.4.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.4.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.4.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.5",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.5",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.5.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.5.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.5.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.5.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.5.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.5.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.5.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.5.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.5.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.5.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.5.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.5.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.5.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.5.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.5.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.5.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.5.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.5.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.5.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.5.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.5.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.5.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.5.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.5.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.5.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.5.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.6",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.6",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.6.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.6.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.6.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.6.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.6.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.6.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.6.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.6.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.6.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.6.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.6.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.6.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.6.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.6.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.6.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.6.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.6.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.6.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.6.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.6.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.6.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.6.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.6.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.6.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.6.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.6.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.7",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.7",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.7.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.7.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.7.self_attn",
+      "label": "Qwen3_5Attention",
+      "torch_path": "model.language_model.layers.7.self_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.7.self_attn.qkv_proj",
+      "label": "Linear \u00b7 1024 \u2192 5120",
+      "torch_path": "model.language_model.layers.7.self_attn.qkv_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        5120,
+        1024
+      ]
+    },
+    {
+      "id": "layer.7.self_attn.q_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.7.self_attn.q_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.7.self_attn.k_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.7.self_attn.k_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.7.self_attn.rope",
+      "label": "RoPE \uc801\uc6a9",
+      "kind": "function",
+      "torch_path": "apply_rotary_pos_emb"
+    },
+    {
+      "id": "layer.7.self_attn.attention",
+      "label": "Decode attention + KV",
+      "kind": "function",
+      "torch_path": "decode_attention"
+    },
+    {
+      "id": "layer.7.self_attn.o_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.7.self_attn.o_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.7.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.7.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.7.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.7.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.7.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.7.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.7.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.7.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.7.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.8",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.8",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.8.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.8.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.8.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.8.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.8.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.8.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.8.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.8.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.8.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.8.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.8.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.8.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.8.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.8.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.8.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.8.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.8.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.8.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.8.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.8.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.8.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.8.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.8.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.8.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.8.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.8.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.9",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.9",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.9.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.9.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.9.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.9.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.9.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.9.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.9.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.9.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.9.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.9.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.9.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.9.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.9.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.9.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.9.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.9.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.9.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.9.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.9.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.9.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.9.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.9.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.9.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.9.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.9.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.9.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.10",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.10",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.10.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.10.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.10.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.10.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.10.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.10.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.10.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.10.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.10.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.10.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.10.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.10.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.10.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.10.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.10.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.10.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.10.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.10.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.10.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.10.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.10.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.10.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.10.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.10.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.10.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.10.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.11",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.11",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.11.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.11.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.11.self_attn",
+      "label": "Qwen3_5Attention",
+      "torch_path": "model.language_model.layers.11.self_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.11.self_attn.qkv_proj",
+      "label": "Linear \u00b7 1024 \u2192 5120",
+      "torch_path": "model.language_model.layers.11.self_attn.qkv_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        5120,
+        1024
+      ]
+    },
+    {
+      "id": "layer.11.self_attn.q_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.11.self_attn.q_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.11.self_attn.k_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.11.self_attn.k_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.11.self_attn.rope",
+      "label": "RoPE \uc801\uc6a9",
+      "kind": "function",
+      "torch_path": "apply_rotary_pos_emb"
+    },
+    {
+      "id": "layer.11.self_attn.attention",
+      "label": "Decode attention + KV",
+      "kind": "function",
+      "torch_path": "decode_attention"
+    },
+    {
+      "id": "layer.11.self_attn.o_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.11.self_attn.o_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.11.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.11.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.11.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.11.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.11.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.11.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.11.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.11.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.11.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.12",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.12",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.12.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.12.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.12.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.12.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.12.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.12.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.12.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.12.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.12.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.12.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.12.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.12.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.12.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.12.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.12.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.12.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.12.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.12.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.12.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.12.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.12.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.12.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.12.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.12.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.12.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.12.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.13",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.13",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.13.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.13.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.13.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.13.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.13.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.13.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.13.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.13.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.13.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.13.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.13.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.13.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.13.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.13.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.13.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.13.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.13.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.13.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.13.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.13.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.13.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.13.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.13.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.13.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.13.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.13.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.14",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.14",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.14.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.14.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.14.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.14.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.14.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.14.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.14.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.14.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.14.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.14.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.14.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.14.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.14.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.14.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.14.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.14.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.14.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.14.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.14.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.14.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.14.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.14.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.14.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.14.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.14.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.14.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.15",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.15",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.15.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.15.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.15.self_attn",
+      "label": "Qwen3_5Attention",
+      "torch_path": "model.language_model.layers.15.self_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.15.self_attn.qkv_proj",
+      "label": "Linear \u00b7 1024 \u2192 5120",
+      "torch_path": "model.language_model.layers.15.self_attn.qkv_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        5120,
+        1024
+      ]
+    },
+    {
+      "id": "layer.15.self_attn.q_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.15.self_attn.q_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.15.self_attn.k_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.15.self_attn.k_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.15.self_attn.rope",
+      "label": "RoPE \uc801\uc6a9",
+      "kind": "function",
+      "torch_path": "apply_rotary_pos_emb"
+    },
+    {
+      "id": "layer.15.self_attn.attention",
+      "label": "Decode attention + KV",
+      "kind": "function",
+      "torch_path": "decode_attention"
+    },
+    {
+      "id": "layer.15.self_attn.o_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.15.self_attn.o_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.15.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.15.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.15.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.15.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.15.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.15.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.15.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.15.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.15.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.16",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.16",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.16.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.16.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.16.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.16.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.16.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.16.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.16.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.16.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.16.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.16.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.16.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.16.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.16.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.16.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.16.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.16.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.16.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.16.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.16.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.16.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.16.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.16.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.16.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.16.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.16.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.16.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.17",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.17",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.17.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.17.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.17.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.17.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.17.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.17.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.17.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.17.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.17.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.17.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.17.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.17.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.17.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.17.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.17.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.17.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.17.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.17.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.17.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.17.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.17.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.17.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.17.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.17.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.17.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.17.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.18",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.18",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.18.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.18.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.18.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.18.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.18.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.18.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.18.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.18.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.18.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.18.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.18.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.18.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.18.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.18.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.18.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.18.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.18.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.18.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.18.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.18.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.18.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.18.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.18.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.18.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.18.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.18.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.19",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.19",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.19.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.19.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.19.self_attn",
+      "label": "Qwen3_5Attention",
+      "torch_path": "model.language_model.layers.19.self_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.19.self_attn.qkv_proj",
+      "label": "Linear \u00b7 1024 \u2192 5120",
+      "torch_path": "model.language_model.layers.19.self_attn.qkv_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        5120,
+        1024
+      ]
+    },
+    {
+      "id": "layer.19.self_attn.q_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.19.self_attn.q_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.19.self_attn.k_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.19.self_attn.k_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.19.self_attn.rope",
+      "label": "RoPE \uc801\uc6a9",
+      "kind": "function",
+      "torch_path": "apply_rotary_pos_emb"
+    },
+    {
+      "id": "layer.19.self_attn.attention",
+      "label": "Decode attention + KV",
+      "kind": "function",
+      "torch_path": "decode_attention"
+    },
+    {
+      "id": "layer.19.self_attn.o_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.19.self_attn.o_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.19.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.19.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.19.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.19.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.19.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.19.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.19.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.19.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.19.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.20",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.20",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.20.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.20.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.20.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.20.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.20.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.20.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.20.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.20.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.20.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.20.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.20.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.20.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.20.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.20.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.20.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.20.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.20.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.20.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.20.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.20.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.20.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.20.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.20.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.20.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.20.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.20.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.21",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.21",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.21.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.21.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.21.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.21.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.21.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.21.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.21.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.21.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.21.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.21.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.21.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.21.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.21.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.21.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.21.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.21.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.21.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.21.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.21.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.21.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.21.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.21.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.21.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.21.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.21.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.21.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.22",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.22",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.22.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.22.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.22.linear_attn",
+      "label": "Qwen3_5GatedDeltaNet",
+      "torch_path": "model.language_model.layers.22.linear_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.22.linear_attn.in_proj_qkvz",
+      "label": "Linear \u00b7 1024 \u2192 8192",
+      "torch_path": "model.language_model.layers.22.linear_attn.in_proj_qkvz",
+      "kind": "nn.Module",
+      "weight_shape": [
+        8192,
+        1024
+      ]
+    },
+    {
+      "id": "layer.22.linear_attn.in_proj_b",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.22.linear_attn.in_proj_b",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.22.linear_attn.in_proj_a",
+      "label": "Linear \u00b7 1024 \u2192 16",
+      "torch_path": "model.language_model.layers.22.linear_attn.in_proj_a",
+      "kind": "nn.Module",
+      "weight_shape": [
+        16,
+        1024
+      ]
+    },
+    {
+      "id": "layer.22.linear_attn.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.22.linear_attn.delta",
+      "label": "Recurrent gated delta rule",
+      "kind": "function",
+      "torch_path": "torch_recurrent_gated_delta_rule"
+    },
+    {
+      "id": "layer.22.linear_attn.norm",
+      "label": "Qwen3_5RMSNormGated",
+      "torch_path": "model.language_model.layers.22.linear_attn.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        128
+      ]
+    },
+    {
+      "id": "layer.22.linear_attn.norm.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.22.linear_attn.out_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.22.linear_attn.out_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.22.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.22.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.22.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.22.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.22.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.22.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.22.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.22.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.22.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "layer.23",
+      "label": "Qwen3_5DecoderLayer",
+      "torch_path": "model.language_model.layers.23",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.23.input_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.23.input_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.23.self_attn",
+      "label": "Qwen3_5Attention",
+      "torch_path": "model.language_model.layers.23.self_attn",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.23.self_attn.qkv_proj",
+      "label": "Linear \u00b7 1024 \u2192 5120",
+      "torch_path": "model.language_model.layers.23.self_attn.qkv_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        5120,
+        1024
+      ]
+    },
+    {
+      "id": "layer.23.self_attn.q_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.23.self_attn.q_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.23.self_attn.k_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.23.self_attn.k_norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        256
+      ]
+    },
+    {
+      "id": "layer.23.self_attn.rope",
+      "label": "RoPE \uc801\uc6a9",
+      "kind": "function",
+      "torch_path": "apply_rotary_pos_emb"
+    },
+    {
+      "id": "layer.23.self_attn.attention",
+      "label": "Decode attention + KV",
+      "kind": "function",
+      "torch_path": "decode_attention"
+    },
+    {
+      "id": "layer.23.self_attn.o_proj",
+      "label": "Linear \u00b7 2048 \u2192 1024",
+      "torch_path": "model.language_model.layers.23.self_attn.o_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "id": "layer.23.post_attention_layernorm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.layers.23.post_attention_layernorm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "layer.23.mlp",
+      "label": "Qwen3_5MLP",
+      "torch_path": "model.language_model.layers.23.mlp",
+      "kind": "nn.Module"
+    },
+    {
+      "id": "layer.23.mlp.gate_up_proj",
+      "label": "Linear \u00b7 1024 \u2192 7168",
+      "torch_path": "model.language_model.layers.23.mlp.gate_up_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        7168,
+        1024
+      ]
+    },
+    {
+      "id": "layer.23.mlp.silu",
+      "label": "SiLU",
+      "kind": "function",
+      "torch_path": "silu"
+    },
+    {
+      "id": "layer.23.mlp.down_proj",
+      "label": "Linear \u00b7 3584 \u2192 1024",
+      "torch_path": "model.language_model.layers.23.mlp.down_proj",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024,
+        3584
+      ]
+    },
+    {
+      "id": "final_norm",
+      "label": "Qwen3_5RMSNorm",
+      "torch_path": "model.language_model.norm",
+      "kind": "nn.Module",
+      "weight_shape": [
+        1024
+      ]
+    },
+    {
+      "id": "lm_head",
+      "label": "Linear \u00b7 1024 \u2192 248320",
+      "torch_path": "lm_head",
+      "kind": "nn.Module",
+      "weight_shape": [
+        248320,
+        1024
+      ]
+    },
+    {
+      "id": "layer.0.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.1.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.2.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.4.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.5.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.6.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.8.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.9.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.10.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.12.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.13.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.14.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.16.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.17.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.18.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.20.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.21.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "layer.22.linear_attn.conv1d",
+      "label": "Causal depthwise convolution",
+      "kind": "function",
+      "torch_path": "_VariableFunctionsClass.conv1d"
+    },
+    {
+      "id": "execution.decode",
+      "label": "Decode \uc785\ub825\u00b7\uc2e4\ud589",
+      "kind": "control"
+    },
+    {
+      "id": "execution.sampling",
+      "label": "Greedy token \uc120\ud0dd",
+      "kind": "control"
+    },
+    {
+      "id": "execution.output",
+      "label": "\ucd9c\ub825 token \uacb0\ud569",
+      "kind": "control"
+    }
+  ],
+  "module_attribution": "forward hooks + function NVTX; graph construction node IDs",
+  "counter_phase": null
+}

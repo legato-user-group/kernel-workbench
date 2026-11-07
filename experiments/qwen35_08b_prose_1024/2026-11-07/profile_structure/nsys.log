@@ -1,0 +1,7 @@
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-root/nsys-report-de61.qdstrm'
+[1/1] [0%                          ] trace.nsys-repProcessing events...
+[1/1] [0%                          ] trace.nsys-rep[1/1] [1%                          ] trace.nsys-rep[1/1] [2%                          ] trace.nsys-rep[1/1] [5%                          ] trace.nsys-rep[1/1] [6%                          ] trace.nsys-rep[1/1] [7%                          ] trace.nsys-rep[1/1] [8%                          ] trace.nsys-rep[1/1] [9%                          ] trace.nsys-rep[1/1] [10%                         ] trace.nsys-rep[1/1] [11%                         ] trace.nsys-rep[1/1] [12%                         ] trace.nsys-rep[1/1] [13%                         ] trace.nsys-rep[1/1] [14%                         ] trace.nsys-rep[1/1] [=15%                        ] trace.nsys-rep[1/1] [=16%                        ] trace.nsys-rep[1/1] [=17%                        ] trace.nsys-rep[1/1] [==18%                       ] trace.nsys-rep[1/1] [==19%                       ] trace.nsys-rep[1/1] [==20%                       ] trace.nsys-rep[1/1] [=======================93%  ] trace.nsys-rep[1/1] [=======================96%  ] trace.nsys-rep[1/1] [========================98% ] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep[1/1] [========================100%] trace.nsys-rep
+Generated:
+	/content/kwb-structure-20261107/experiments/qwen35_08b_prose_1024/2026-11-07/profile/trace.nsys-rep

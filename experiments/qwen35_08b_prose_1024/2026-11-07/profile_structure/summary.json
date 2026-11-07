@@ -1,0 +1,3963 @@
+{
+  "source": "nsys_kernel_activity",
+  "scope": {
+    "engine": "fp16_plain_cudagraph",
+    "input_tokens": 1024,
+    "output_tokens": 256,
+    "checkpoint": "Qwen/Qwen3.5-0.8B",
+    "checkpoint_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "input_ids_sha256": "220f59fba4e5e4e7636fc99e0411a62e8ea05b97ead47d9ff8371615a57af854",
+    "decode_steps": 255,
+    "output_ids_sha256": "d2f72422e06ddb50994b66e6136d86bf32ae7dcda5b71909fcbe6389890e2242",
+    "matches_unprofiled_generation": true,
+    "matches_hf_greedy": true,
+    "correctness": {
+      "passed": true,
+      "positions": 256,
+      "logits_sha256": "f1bb2249849102713533a27a1ada878d3cc74b7ec3fc00beacc26dc114b826f6",
+      "validation_scope": "exact full-logit hash and token equality to saved HF-validated candidate; independent reset replay"
+    },
+    "scope": "one warmed generation; graph decode; profiler timings are diagnostic",
+    "module_structure": [
+      {
+        "id": "execution.model",
+        "label": "Decoder \uc2e4\ud589\u00b7\uc0c1\ud0dc",
+        "kind": "function",
+        "torch_path": "Qwen3_5ForCausalLM.decode_logits"
+      },
+      {
+        "id": "embedding",
+        "label": "Embedding",
+        "torch_path": "model.language_model.embed_tokens",
+        "kind": "nn.Module",
+        "weight_shape": [
+          248320,
+          1024
+        ]
+      },
+      {
+        "id": "position_embeddings",
+        "label": "Qwen3_5TextRotaryEmbedding",
+        "torch_path": "model.language_model.rotary_emb",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.0",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.0",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.0.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.0.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.0.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.0.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.0.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.0.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.0.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.0.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.0.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.0.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.0.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.0.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.0.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.0.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.0.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.0.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.0.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.0.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.0.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.0.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.1",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.1",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.1.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.1.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.1.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.1.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.1.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.1.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.1.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.1.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.1.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.1.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.1.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.1.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.1.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.1.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.1.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.1.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.1.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.1.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.1.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.1.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.1.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.1.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.1.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.1.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.1.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.1.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.2",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.2",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.2.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.2.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.2.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.2.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.2.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.2.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.2.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.2.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.2.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.2.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.2.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.2.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.2.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.2.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.2.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.2.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.2.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.2.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.2.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.2.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.2.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.2.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.2.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.2.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.2.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.2.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.3",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.3",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.3.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.3.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.3.self_attn",
+        "label": "Qwen3_5Attention",
+        "torch_path": "model.language_model.layers.3.self_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.3.self_attn.qkv_proj",
+        "label": "Linear \u00b7 1024 \u2192 5120",
+        "torch_path": "model.language_model.layers.3.self_attn.qkv_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          5120,
+          1024
+        ]
+      },
+      {
+        "id": "layer.3.self_attn.q_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.3.self_attn.q_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.3.self_attn.k_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.3.self_attn.k_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.3.self_attn.rope",
+        "label": "RoPE \uc801\uc6a9",
+        "kind": "function",
+        "torch_path": "apply_rotary_pos_emb"
+      },
+      {
+        "id": "layer.3.self_attn.attention",
+        "label": "Decode attention + KV",
+        "kind": "function",
+        "torch_path": "decode_attention"
+      },
+      {
+        "id": "layer.3.self_attn.o_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.3.self_attn.o_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.3.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.3.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.3.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.3.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.3.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.3.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.3.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.3.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.3.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.4",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.4",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.4.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.4.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.4.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.4.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.4.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.4.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.4.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.4.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.4.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.4.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.4.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.4.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.4.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.4.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.4.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.4.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.4.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.4.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.4.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.4.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.4.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.4.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.4.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.4.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.4.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.4.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.5",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.5",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.5.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.5.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.5.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.5.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.5.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.5.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.5.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.5.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.5.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.5.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.5.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.5.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.5.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.5.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.5.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.5.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.5.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.5.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.5.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.5.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.5.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.5.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.5.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.5.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.5.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.5.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.6",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.6",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.6.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.6.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.6.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.6.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.6.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.6.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.6.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.6.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.6.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.6.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.6.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.6.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.6.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.6.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.6.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.6.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.6.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.6.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.6.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.6.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.6.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.6.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.6.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.6.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.6.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.6.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.7",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.7",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.7.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.7.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.7.self_attn",
+        "label": "Qwen3_5Attention",
+        "torch_path": "model.language_model.layers.7.self_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.7.self_attn.qkv_proj",
+        "label": "Linear \u00b7 1024 \u2192 5120",
+        "torch_path": "model.language_model.layers.7.self_attn.qkv_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          5120,
+          1024
+        ]
+      },
+      {
+        "id": "layer.7.self_attn.q_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.7.self_attn.q_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.7.self_attn.k_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.7.self_attn.k_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.7.self_attn.rope",
+        "label": "RoPE \uc801\uc6a9",
+        "kind": "function",
+        "torch_path": "apply_rotary_pos_emb"
+      },
+      {
+        "id": "layer.7.self_attn.attention",
+        "label": "Decode attention + KV",
+        "kind": "function",
+        "torch_path": "decode_attention"
+      },
+      {
+        "id": "layer.7.self_attn.o_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.7.self_attn.o_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.7.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.7.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.7.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.7.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.7.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.7.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.7.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.7.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.7.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.8",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.8",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.8.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.8.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.8.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.8.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.8.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.8.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.8.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.8.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.8.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.8.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.8.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.8.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.8.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.8.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.8.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.8.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.8.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.8.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.8.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.8.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.8.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.8.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.8.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.8.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.8.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.8.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.9",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.9",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.9.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.9.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.9.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.9.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.9.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.9.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.9.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.9.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.9.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.9.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.9.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.9.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.9.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.9.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.9.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.9.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.9.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.9.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.9.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.9.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.9.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.9.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.9.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.9.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.9.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.9.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.10",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.10",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.10.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.10.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.10.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.10.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.10.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.10.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.10.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.10.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.10.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.10.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.10.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.10.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.10.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.10.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.10.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.10.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.10.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.10.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.10.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.10.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.10.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.10.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.10.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.10.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.10.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.10.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.11",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.11",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.11.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.11.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.11.self_attn",
+        "label": "Qwen3_5Attention",
+        "torch_path": "model.language_model.layers.11.self_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.11.self_attn.qkv_proj",
+        "label": "Linear \u00b7 1024 \u2192 5120",
+        "torch_path": "model.language_model.layers.11.self_attn.qkv_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          5120,
+          1024
+        ]
+      },
+      {
+        "id": "layer.11.self_attn.q_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.11.self_attn.q_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.11.self_attn.k_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.11.self_attn.k_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.11.self_attn.rope",
+        "label": "RoPE \uc801\uc6a9",
+        "kind": "function",
+        "torch_path": "apply_rotary_pos_emb"
+      },
+      {
+        "id": "layer.11.self_attn.attention",
+        "label": "Decode attention + KV",
+        "kind": "function",
+        "torch_path": "decode_attention"
+      },
+      {
+        "id": "layer.11.self_attn.o_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.11.self_attn.o_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.11.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.11.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.11.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.11.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.11.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.11.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.11.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.11.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.11.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.12",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.12",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.12.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.12.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.12.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.12.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.12.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.12.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.12.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.12.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.12.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.12.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.12.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.12.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.12.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.12.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.12.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.12.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.12.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.12.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.12.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.12.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.12.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.12.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.12.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.12.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.12.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.12.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.13",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.13",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.13.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.13.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.13.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.13.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.13.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.13.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.13.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.13.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.13.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.13.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.13.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.13.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.13.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.13.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.13.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.13.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.13.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.13.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.13.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.13.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.13.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.13.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.13.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.13.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.13.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.13.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.14",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.14",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.14.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.14.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.14.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.14.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.14.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.14.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.14.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.14.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.14.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.14.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.14.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.14.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.14.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.14.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.14.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.14.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.14.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.14.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.14.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.14.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.14.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.14.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.14.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.14.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.14.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.14.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.15",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.15",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.15.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.15.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.15.self_attn",
+        "label": "Qwen3_5Attention",
+        "torch_path": "model.language_model.layers.15.self_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.15.self_attn.qkv_proj",
+        "label": "Linear \u00b7 1024 \u2192 5120",
+        "torch_path": "model.language_model.layers.15.self_attn.qkv_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          5120,
+          1024
+        ]
+      },
+      {
+        "id": "layer.15.self_attn.q_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.15.self_attn.q_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.15.self_attn.k_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.15.self_attn.k_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.15.self_attn.rope",
+        "label": "RoPE \uc801\uc6a9",
+        "kind": "function",
+        "torch_path": "apply_rotary_pos_emb"
+      },
+      {
+        "id": "layer.15.self_attn.attention",
+        "label": "Decode attention + KV",
+        "kind": "function",
+        "torch_path": "decode_attention"
+      },
+      {
+        "id": "layer.15.self_attn.o_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.15.self_attn.o_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.15.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.15.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.15.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.15.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.15.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.15.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.15.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.15.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.15.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.16",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.16",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.16.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.16.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.16.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.16.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.16.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.16.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.16.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.16.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.16.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.16.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.16.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.16.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.16.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.16.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.16.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.16.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.16.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.16.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.16.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.16.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.16.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.16.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.16.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.16.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.16.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.16.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.17",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.17",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.17.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.17.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.17.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.17.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.17.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.17.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.17.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.17.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.17.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.17.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.17.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.17.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.17.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.17.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.17.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.17.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.17.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.17.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.17.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.17.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.17.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.17.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.17.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.17.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.17.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.17.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.18",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.18",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.18.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.18.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.18.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.18.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.18.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.18.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.18.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.18.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.18.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.18.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.18.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.18.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.18.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.18.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.18.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.18.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.18.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.18.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.18.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.18.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.18.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.18.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.18.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.18.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.18.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.18.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.19",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.19",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.19.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.19.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.19.self_attn",
+        "label": "Qwen3_5Attention",
+        "torch_path": "model.language_model.layers.19.self_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.19.self_attn.qkv_proj",
+        "label": "Linear \u00b7 1024 \u2192 5120",
+        "torch_path": "model.language_model.layers.19.self_attn.qkv_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          5120,
+          1024
+        ]
+      },
+      {
+        "id": "layer.19.self_attn.q_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.19.self_attn.q_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.19.self_attn.k_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.19.self_attn.k_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.19.self_attn.rope",
+        "label": "RoPE \uc801\uc6a9",
+        "kind": "function",
+        "torch_path": "apply_rotary_pos_emb"
+      },
+      {
+        "id": "layer.19.self_attn.attention",
+        "label": "Decode attention + KV",
+        "kind": "function",
+        "torch_path": "decode_attention"
+      },
+      {
+        "id": "layer.19.self_attn.o_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.19.self_attn.o_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.19.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.19.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.19.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.19.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.19.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.19.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.19.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.19.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.19.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.20",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.20",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.20.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.20.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.20.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.20.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.20.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.20.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.20.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.20.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.20.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.20.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.20.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.20.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.20.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.20.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.20.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.20.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.20.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.20.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.20.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.20.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.20.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.20.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.20.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.20.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.20.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.20.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.21",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.21",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.21.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.21.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.21.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.21.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.21.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.21.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.21.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.21.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.21.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.21.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.21.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.21.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.21.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.21.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.21.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.21.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.21.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.21.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.21.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.21.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.21.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.21.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.21.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.21.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.21.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.21.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.22",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.22",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.22.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.22.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.22.linear_attn",
+        "label": "Qwen3_5GatedDeltaNet",
+        "torch_path": "model.language_model.layers.22.linear_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.22.linear_attn.in_proj_qkvz",
+        "label": "Linear \u00b7 1024 \u2192 8192",
+        "torch_path": "model.language_model.layers.22.linear_attn.in_proj_qkvz",
+        "kind": "nn.Module",
+        "weight_shape": [
+          8192,
+          1024
+        ]
+      },
+      {
+        "id": "layer.22.linear_attn.in_proj_b",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.22.linear_attn.in_proj_b",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.22.linear_attn.in_proj_a",
+        "label": "Linear \u00b7 1024 \u2192 16",
+        "torch_path": "model.language_model.layers.22.linear_attn.in_proj_a",
+        "kind": "nn.Module",
+        "weight_shape": [
+          16,
+          1024
+        ]
+      },
+      {
+        "id": "layer.22.linear_attn.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.22.linear_attn.delta",
+        "label": "Recurrent gated delta rule",
+        "kind": "function",
+        "torch_path": "torch_recurrent_gated_delta_rule"
+      },
+      {
+        "id": "layer.22.linear_attn.norm",
+        "label": "Qwen3_5RMSNormGated",
+        "torch_path": "model.language_model.layers.22.linear_attn.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          128
+        ]
+      },
+      {
+        "id": "layer.22.linear_attn.norm.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.22.linear_attn.out_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.22.linear_attn.out_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.22.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.22.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.22.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.22.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.22.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.22.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.22.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.22.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.22.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "layer.23",
+        "label": "Qwen3_5DecoderLayer",
+        "torch_path": "model.language_model.layers.23",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.23.input_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.23.input_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.23.self_attn",
+        "label": "Qwen3_5Attention",
+        "torch_path": "model.language_model.layers.23.self_attn",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.23.self_attn.qkv_proj",
+        "label": "Linear \u00b7 1024 \u2192 5120",
+        "torch_path": "model.language_model.layers.23.self_attn.qkv_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          5120,
+          1024
+        ]
+      },
+      {
+        "id": "layer.23.self_attn.q_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.23.self_attn.q_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.23.self_attn.k_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.23.self_attn.k_norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          256
+        ]
+      },
+      {
+        "id": "layer.23.self_attn.rope",
+        "label": "RoPE \uc801\uc6a9",
+        "kind": "function",
+        "torch_path": "apply_rotary_pos_emb"
+      },
+      {
+        "id": "layer.23.self_attn.attention",
+        "label": "Decode attention + KV",
+        "kind": "function",
+        "torch_path": "decode_attention"
+      },
+      {
+        "id": "layer.23.self_attn.o_proj",
+        "label": "Linear \u00b7 2048 \u2192 1024",
+        "torch_path": "model.language_model.layers.23.self_attn.o_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          2048
+        ]
+      },
+      {
+        "id": "layer.23.post_attention_layernorm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.layers.23.post_attention_layernorm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "layer.23.mlp",
+        "label": "Qwen3_5MLP",
+        "torch_path": "model.language_model.layers.23.mlp",
+        "kind": "nn.Module"
+      },
+      {
+        "id": "layer.23.mlp.gate_up_proj",
+        "label": "Linear \u00b7 1024 \u2192 7168",
+        "torch_path": "model.language_model.layers.23.mlp.gate_up_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          7168,
+          1024
+        ]
+      },
+      {
+        "id": "layer.23.mlp.silu",
+        "label": "SiLU",
+        "kind": "function",
+        "torch_path": "silu"
+      },
+      {
+        "id": "layer.23.mlp.down_proj",
+        "label": "Linear \u00b7 3584 \u2192 1024",
+        "torch_path": "model.language_model.layers.23.mlp.down_proj",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024,
+          3584
+        ]
+      },
+      {
+        "id": "final_norm",
+        "label": "Qwen3_5RMSNorm",
+        "torch_path": "model.language_model.norm",
+        "kind": "nn.Module",
+        "weight_shape": [
+          1024
+        ]
+      },
+      {
+        "id": "lm_head",
+        "label": "Linear \u00b7 1024 \u2192 248320",
+        "torch_path": "lm_head",
+        "kind": "nn.Module",
+        "weight_shape": [
+          248320,
+          1024
+        ]
+      },
+      {
+        "id": "layer.0.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.1.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.2.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.4.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.5.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.6.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.8.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.9.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.10.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.12.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.13.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.14.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.16.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.17.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.18.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.20.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.21.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "layer.22.linear_attn.conv1d",
+        "label": "Causal depthwise convolution",
+        "kind": "function",
+        "torch_path": "_VariableFunctionsClass.conv1d"
+      },
+      {
+        "id": "execution.decode",
+        "label": "Decode \uc785\ub825\u00b7\uc2e4\ud589",
+        "kind": "control"
+      },
+      {
+        "id": "execution.sampling",
+        "label": "Greedy token \uc120\ud0dd",
+        "kind": "control"
+      },
+      {
+        "id": "execution.output",
+        "label": "\ucd9c\ub825 token \uacb0\ud569",
+        "kind": "control"
+      }
+    ],
+    "module_attribution": "forward hooks + function NVTX; graph construction node IDs",
+    "counter_phase": null
+  },
+  "counter_scope": "separate bounded sample; never whole-generation FLOPs or DRAM traffic",
+  "notes": [
+    "Profiled durations are diagnostic; independent latency samples are in results/.",
+    "Device time sums kernels; span includes gaps; overlapping kernels can make sums exceed spans.",
+    "Module ownership uses launch-side NVTX or graph construction node IDs; unmatched calls stay unattributed.",
+    "Memcpy and memset activities are excluded from these kernel totals."
+  ],
+  "phases": {
+    "prefill": {
+      "launches": 4912,
+      "distinct_kernels": 57,
+      "kernel_device_ms": 158.275173,
+      "kernel_span_ms": 249.422174,
+      "launches_per_step": 4912.0,
+      "kernel_device_ms_per_step": 158.275173,
+      "attributed_launches": 4912,
+      "module_count": 395,
+      "unattributed_device_ms": 0
+    },
+    "unknown": {
+      "launches": 3,
+      "distinct_kernels": 2,
+      "kernel_device_ms": 0.016896,
+      "kernel_span_ms": 4058.277935,
+      "launches_per_step": 3.0,
+      "kernel_device_ms_per_step": 0.016896,
+      "attributed_launches": 3,
+      "module_count": 2,
+      "unattributed_device_ms": 0
+    },
+    "decode": {
+      "launches": 520965,
+      "distinct_kernels": 46,
+      "kernel_device_ms": 3787.018251,
+      "kernel_span_ms": 4058.254767,
+      "launches_per_step": 2043.0,
+      "kernel_device_ms_per_step": 14.851051964705881,
+      "attributed_launches": 520965,
+      "module_count": 378,
+      "unattributed_device_ms": 0
+    }
+  },
+  "kernels": [
+    {
+      "phase": "decode",
+      "name": "void gemv2T_kernel_val<int, int, __half, __half, __half, float, (int)128, (int)16, (int)4, (int)4, (bool)0, (bool)0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<__half>, float>>(T13, T6, T6)",
+      "launches": 12240,
+      "device_ms": 839.810708,
+      "mean_us": 68.61198594771241
+    },
+    {
+      "phase": "decode",
+      "name": "std::enable_if<T7, void>::type internal::gemvx::kernel<int, int, __half, __half, __half, float, (bool)1, (bool)1, (bool)1, (bool)0, (int)7, (bool)0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<__half>, float>>(T13)",
+      "launches": 255,
+      "device_ms": 575.259638,
+      "mean_us": 2255.920149019608
+    },
+    {
+      "phase": "decode",
+      "name": "_decode_attention_kernel",
+      "launches": 1530,
+      "device_ms": 425.286698,
+      "mean_us": 277.96516209150326
+    },
+    {
+      "phase": "decode",
+      "name": "std::enable_if<!T7, void>::type internal::gemvx::kernel<int, int, __half, __half, __half, float, (bool)0, (bool)1, (bool)1, (bool)0, (int)7, (bool)0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<__half>, float>>(T13)",
+      "launches": 12240,
+      "device_ms": 338.060861,
+      "mean_us": 27.619351388888887
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (int)4, TrivialOffsetCalculator<(int)1, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)1>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)",
+      "launches": 75735,
+      "device_ms": 287.419896,
+      "mean_us": 3.795073559120618
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 57120,
+      "device_ms": 241.140609,
+      "mean_us": 4.221649317226891
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::reduce_kernel<(int)128, (int)4, at::native::ReduceOp<float, at::native::func_wrapper_t<float, at::native::sum_functor<float, float, float>::operator ()(at::TensorIterator &)::[lambda(float, float) (instance 1)]>, unsigned int, float, (int)4, (int)4>>(T3)",
+      "launches": 12240,
+      "device_ms": 110.674728,
+      "mean_us": 9.04205294117647
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::MeanOps<float, float, float, float>, unsigned int, float, (int)4, (int)4>>(T3)",
+      "launches": 20145,
+      "device_ms": 108.220594,
+      "mean_us": 5.372082104740631
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<float>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 44880,
+      "device_ms": 88.451362,
+      "mean_us": 1.9708413992869878
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::float16_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 35955,
+      "device_ms": 73.224831,
+      "mean_us": 2.0365687943262407
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::func_wrapper_t<float, at::native::sum_functor<float, float, float>::operator ()(at::TensorIterator &)::[lambda(float, float) (instance 1)]>, unsigned int, float, (int)4, (int)4>>(T3)",
+      "launches": 13770,
+      "device_ms": 72.186582,
+      "mean_us": 5.242308061002178
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 32385,
+      "device_ms": 68.25009,
+      "mean_us": 2.1074599351551644
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::rsqrt_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 29325,
+      "device_ms": 60.820811,
+      "mean_us": 2.0740259505541347
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, void at::native::<unnamed>::pow_tensor_scalar_kernel_impl<float, float>(at::TensorIteratorBase &, T2)::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 20145,
+      "device_ms": 41.026298,
+      "mean_us": 2.0365499131298086
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<c10::Half, c10::Half, c10::Half, at::native::binary_internal::MulFunctor<float>>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 10710,
+      "device_ms": 38.671779,
+      "mean_us": 3.6108103641456584
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctor_add<c10::Half>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 15300,
+      "device_ms": 33.420472,
+      "mean_us": 2.1843445751633985
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 5)]::operator ()() const::[lambda(c10::Half) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 10710,
+      "device_ms": 29.856534,
+      "mean_us": 2.7877249299719886
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::unrolled_elementwise_kernel<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>, (int)4, TrivialOffsetCalculator<(int)2, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)2>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)",
+      "launches": 4590,
+      "device_ms": 28.54565,
+      "mean_us": 6.219095860566449
+    },
+    {
+      "phase": "decode",
+      "name": "void dot_kernel<float, (int)128, (int)0, cublasDotParams<cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<float>>>(T4)",
+      "launches": 9180,
+      "device_ms": 28.054233,
+      "mean_us": 3.056016666666667
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctor_add<float>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 9180,
+      "device_ms": 27.573425,
+      "mean_us": 3.003641067538126
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::exp_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 10710,
+      "device_ms": 23.582174,
+      "mean_us": 2.201883660130719
+    },
+    {
+      "phase": "decode",
+      "name": "void reduce_1Block_kernel<float, (int)128, (int)7, cublasGemvTensorStridedBatched<float>, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<__half>>(const T1 *, T1, T4, int, const T1 *, T1, T5, T6, cublasPointerMode_t, cublasLtEpilogue_t, cublasGemvTensorStridedBatched<const biasType<T6::value_type, T1>::type>)",
+      "launches": 9180,
+      "device_ms": 22.715437,
+      "mean_us": 2.4744484749455338
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 10)]::operator ()() const::[lambda(c10::Half) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 6120,
+      "device_ms": 22.618356,
+      "mean_us": 3.6958098039215685
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy<at::native::<unnamed>::OpaqueType<(unsigned int)2>, unsigned int, (int)4, (int)64, (int)64>(T1 *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 6120,
+      "device_ms": 21.865698,
+      "mean_us": 3.5728264705882347
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy_alignedK_contig<at::native::<unnamed>::OpaqueType<(unsigned int)2>, unsigned int, (int)3, (int)128, (int)1, (int)8>(T1 *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 4590,
+      "device_ms": 17.397309,
+      "mean_us": 3.7902633986928107
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<c10::Half, c10::Half, c10::Half, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 7650,
+      "device_ms": 16.336616,
+      "mean_us": 2.1355053594771243
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::reduce_kernel<(int)128, (int)4, at::native::ReduceOp<float, at::native::func_wrapper_t<float, at::native::MaxNanFunctor<float>>, unsigned int, float, (int)4, (int)4>>(T3)",
+      "launches": 1530,
+      "device_ms": 16.245476,
+      "mean_us": 10.61795816993464
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::sigmoid_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(c10::Half) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 6120,
+      "device_ms": 15.100674999999999,
+      "mean_us": 2.4674305555555556
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::softplus_kernel(at::TensorIteratorBase &, const c10::Scalar &, const c10::Scalar &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 4590,
+      "device_ms": 13.958836999999999,
+      "mean_us": 3.0411409586056646
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::unrolled_elementwise_kernel<at::native::CUDAFunctor_add<float>, std::array<char *, (unsigned long)3>, (int)4, TrivialOffsetCalculator<(int)2, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)2>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)",
+      "launches": 4590,
+      "device_ms": 12.921733,
+      "mean_us": 2.815192374727669
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::index_elementwise_kernel<(int)128, (int)4, void at::native::index_copy_kernel_impl<at::native::OpaqueType<(int)2>>(at::TensorIterator &, long, long, long)::[lambda(int) (instance 1)]>(long, T3)",
+      "launches": 3060,
+      "device_ms": 12.532584,
+      "mean_us": 4.09561568627451
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 4590,
+      "device_ms": 10.822457,
+      "mean_us": 2.357833769063181
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 1785,
+      "device_ms": 10.517121,
+      "mean_us": 5.891944537815125
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::BUnaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 4590,
+      "device_ms": 9.052381,
+      "mean_us": 1.9721962962962967
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::neg_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 4590,
+      "device_ms": 9.004944,
+      "mean_us": 1.9618614379084967
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::neg_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 8)]::operator ()() const::[lambda(c10::Half) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 3060,
+      "device_ms": 8.564693,
+      "mean_us": 2.7989192810457513
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<float>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)",
+      "launches": 4590,
+      "device_ms": 8.10187,
+      "mean_us": 1.7651132897603485
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::DivFunctor<float>>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 1530,
+      "device_ms": 5.005611,
+      "mean_us": 3.271641176470588
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::CUDAFunctor_add<float>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 1530,
+      "device_ms": 5.004321,
+      "mean_us": 3.2707980392156863
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::Half, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)",
+      "launches": 255,
+      "device_ms": 2.893445,
+      "mean_us": 11.3468431372549
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 1020,
+      "device_ms": 2.41156,
+      "mean_us": 2.3642745098039217
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy_vectorized<at::native::<unnamed>::OpaqueType<(unsigned int)4>, unsigned int, (int)3, (int)128, (int)1, (int)16, (int)4>(char *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 510,
+      "device_ms": 1.584219,
+      "mean_us": 3.1063117647058824
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::<unnamed>::indexSelectSmallIndex<c10::Half, long, unsigned int, (int)2, (int)2, (int)-2>(at::cuda::detail::TensorInfo<T1, T3>, at::cuda::detail::TensorInfo<const T1, T3>, at::cuda::detail::TensorInfo<const T2, T3>, int, int, T3, long)",
+      "launches": 255,
+      "device_ms": 0.941355,
+      "mean_us": 3.691588235294118
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::sin_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 255,
+      "device_ms": 0.675476,
+      "mean_us": 2.6489254901960786
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::cos_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 255,
+      "device_ms": 0.640276,
+      "mean_us": 2.510886274509804
+    },
+    {
+      "phase": "decode",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)2, at::native::CUDAFunctorOnSelf_add<long>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 255,
+      "device_ms": 0.567828,
+      "mean_us": 2.226776470588235
+    },
+    {
+      "phase": "prefill",
+      "name": "void batch_trsm_left_kernel<float, (int)64, (int)4, (int)3, (bool)0, (bool)1, (bool)1>(cublasTrsmBatchParams2<T1>, T1, const T1 *, int)",
+      "launches": 36,
+      "device_ms": 17.042891,
+      "mean_us": 473.4136388888889
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 573,
+      "device_ms": 16.878549,
+      "mean_us": 29.456455497382198
+    },
+    {
+      "phase": "prefill",
+      "name": "turing_fp16_s1688gemm_fp16_256x128_ldg8_f2f_tn",
+      "launches": 54,
+      "device_ms": 13.667234,
+      "mean_us": 253.09692592592594
+    },
+    {
+      "phase": "prefill",
+      "name": "turing_fp16_s1688gemm_fp16_128x128_ldg8_f2f_tn",
+      "launches": 42,
+      "device_ms": 12.509718,
+      "mean_us": 297.85042857142855
+    },
+    {
+      "phase": "prefill",
+      "name": "volta_sgemm_64x64_tn",
+      "launches": 324,
+      "device_ms": 9.115015,
+      "mean_us": 28.132762345679012
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 364,
+      "device_ms": 7.094554,
+      "mean_us": 19.490532967032966
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy<at::native::<unnamed>::OpaqueType<(unsigned int)2>, unsigned int, (int)3, (int)64, (int)64>(T1 *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 18,
+      "device_ms": 6.839519,
+      "mean_us": 379.9732777777778
+    },
+    {
+      "phase": "prefill",
+      "name": "volta_sgemm_64x64_nn",
+      "launches": 288,
+      "device_ms": 5.810029,
+      "mean_us": 20.173711805555556
+    },
+    {
+      "phase": "prefill",
+      "name": "volta_sgemm_64x64_nt",
+      "launches": 288,
+      "device_ms": 5.561576,
+      "mean_us": 19.311027777777777
+    },
+    {
+      "phase": "prefill",
+      "name": "volta_sgemm_64x64_tt",
+      "launches": 288,
+      "device_ms": 5.529852,
+      "mean_us": 19.200875
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 85,
+      "device_ms": 5.507034,
+      "mean_us": 64.78863529411764
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 72,
+      "device_ms": 4.423767,
+      "mean_us": 61.44120833333333
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (int)4, TrivialOffsetCalculator<(int)1, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)1>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)",
+      "launches": 183,
+      "device_ms": 3.95466,
+      "mean_us": 21.61016393442623
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, void at::native::<unnamed>::pow_tensor_scalar_kernel_impl<float, float>(at::TensorIteratorBase &, T2)::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 79,
+      "device_ms": 3.514986,
+      "mean_us": 44.493493670886075
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<c10::Half, c10::Half, c10::Half, at::native::binary_internal::MulFunctor<float>>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 66,
+      "device_ms": 3.492172,
+      "mean_us": 52.91169696969697
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::float16_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 99,
+      "device_ms": 3.262067,
+      "mean_us": 32.95017171717172
+    },
+    {
+      "phase": "prefill",
+      "name": "fmha_cutlassF_f16_aligned_32x128_gmem_sm75(PyTorchMemEffAttention::AttentionKernel<cutlass::half_t, cutlass::arch::Sm75, (bool)1, (int)32, (int)128, (int)65536, (bool)1, (bool)1>::Params)",
+      "launches": 6,
+      "device_ms": 3.035351,
+      "mean_us": 505.89183333333335
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::CUDAFunctor_add<float>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 324,
+      "device_ms": 2.952798,
+      "mean_us": 9.113574074074075
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctor_add<float>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 576,
+      "device_ms": 2.920056,
+      "mean_us": 5.069541666666667
+    },
+    {
+      "phase": "prefill",
+      "name": "conv1D_NCHW_general",
+      "launches": 18,
+      "device_ms": 2.613667,
+      "mean_us": 145.2037222222222
+    },
+    {
+      "phase": "prefill",
+      "name": "std::enable_if<T7, void>::type internal::gemvx::kernel<int, int, __half, __half, __half, float, (bool)1, (bool)1, (bool)1, (bool)0, (int)7, (bool)0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<const __half>, cublasGemvTensorStridedBatched<__half>, float>>(T13)",
+      "launches": 1,
+      "device_ms": 2.271594,
+      "mean_us": 2271.594
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 5)]::operator ()() const::[lambda(c10::Half) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 24,
+      "device_ms": 1.928273,
+      "mean_us": 80.34470833333333
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::MeanOps<float, float, float, float>, unsigned int, float, (int)4, (int)4>>(T3)",
+      "launches": 79,
+      "device_ms": 1.928086,
+      "mean_us": 24.406151898734176
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 5)]::operator ()() const::[lambda(c10::Half) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 1.909044,
+      "mean_us": 106.05799999999999
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::unrolled_elementwise_kernel<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>, (int)4, TrivialOffsetCalculator<(int)2, unsigned int>, TrivialOffsetCalculator<(int)1, unsigned int>, at::native::memory::LoadWithCast<(int)2>, at::native::memory::StoreWithCast<(int)1>>(int, T1, T2, T4, T5, T6, T7)",
+      "launches": 18,
+      "device_ms": 1.687546,
+      "mean_us": 93.75255555555556
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::func_wrapper_t<float, at::native::sum_functor<float, float, float>::operator ()(at::TensorIterator &)::[lambda(float, float) (instance 1)]>, unsigned int, float, (int)4, (int)4>>(T3)",
+      "launches": 36,
+      "device_ms": 1.653691,
+      "mean_us": 45.93586111111111
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() const::[lambda() (instance 10)]::operator ()() const::[lambda(c10::Half) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 66,
+      "device_ms": 1.647929,
+      "mean_us": 24.968621212121214
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 1.3011840000000001,
+      "mean_us": 72.28800000000001
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::AUnaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 1.290818,
+      "mean_us": 71.71211111111111
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::float16_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 18,
+      "device_ms": 0.995914,
+      "mean_us": 55.32855555555555
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctor_add<c10::Half>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 48,
+      "device_ms": 0.978026,
+      "mean_us": 20.375541666666667
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<float>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)",
+      "launches": 36,
+      "device_ms": 0.721006,
+      "mean_us": 20.027944444444447
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::exp_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 90,
+      "device_ms": 0.71915,
+      "mean_us": 7.990555555555555
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::<unnamed>::masked_fill_kernel(at::TensorIterator &, const c10::Scalar &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float, bool) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 18,
+      "device_ms": 0.623858,
+      "mean_us": 34.65877777777778
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy<at::native::<unnamed>::OpaqueType<(unsigned int)2>, unsigned int, (int)4, (int)64, (int)64>(T1 *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 24,
+      "device_ms": 0.5572050000000001,
+      "mean_us": 23.216875
+    },
+    {
+      "phase": "prefill",
+      "name": "void cutlass::Kernel2<cutlass_75_wmma_tensorop_f16_s161616gemm_f16_16x16_128x2_tn_align8>(T1::Params)",
+      "launches": 36,
+      "device_ms": 0.406838,
+      "mean_us": 11.301055555555555
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<float>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 176,
+      "device_ms": 0.350419,
+      "mean_us": 1.9910170454545453
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<c10::Half, c10::Half, c10::Half, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+      "launches": 6,
+      "device_ms": 0.319769,
+      "mean_us": 53.29483333333334
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::sigmoid_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 3)]::operator ()() const::[lambda(c10::Half) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 24,
+      "device_ms": 0.259259,
+      "mean_us": 10.802458333333334
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::rsqrt_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 115,
+      "device_ms": 0.221367,
+      "mean_us": 1.9249304347826088
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl<at::native::CUDAFunctor_add<float>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 18,
+      "device_ms": 0.146302,
+      "mean_us": 8.127888888888888
+    },
+    {
+      "phase": "prefill",
+      "name": "void <unnamed>::elementwise_kernel_with_index<int, at::native::arange_cuda_out(const c10::Scalar &, const c10::Scalar &, const c10::Scalar &, at::Tensor &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 4)]::operator ()() const::[lambda(long) (instance 1)]>(T1, T2, function_traits<T2>::result_type *)",
+      "launches": 73,
+      "device_ms": 0.11766,
+      "mean_us": 1.6117808219178082
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::CUDAFunctor_add<c10::Half>>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 12,
+      "device_ms": 0.09574200000000001,
+      "mean_us": 7.9785
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::tensor_kernel_scan_innermost_dim<float, std::plus<float>>(T1 *, const T1 *, unsigned int, unsigned int, unsigned int, T1, T2)",
+      "launches": 18,
+      "device_ms": 0.072672,
+      "mean_us": 4.037333333333333
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::native::exp_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 18,
+      "device_ms": 0.06633,
+      "mean_us": 3.685
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::triu_tril_kernel<bool, int, (bool)1, (int)8, (bool)0>(at::cuda::detail::TensorInfo<T1, T2>, at::cuda::detail::TensorInfo<const T1, T2>, long, long, T2)",
+      "launches": 18,
+      "device_ms": 0.057662,
+      "mean_us": 3.2034444444444445
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::<unnamed>::softplus_kernel(at::TensorIteratorBase &, const c10::Scalar &, const c10::Scalar &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 0.051552,
+      "mean_us": 2.864
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::neg_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 8)]::operator ()() const::[lambda(c10::Half) (instance 1)]>(at::TensorIteratorBase &, const T1 &)::[lambda(int) (instance 1)]>(int, T3)",
+      "launches": 12,
+      "device_ms": 0.046112,
+      "mean_us": 3.8426666666666667
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<bool>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 0.0312,
+      "mean_us": 1.7333333333333334
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::neg_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 7)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 0.025984,
+      "mean_us": 1.4435555555555557
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<c10::Half>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)",
+      "launches": 18,
+      "device_ms": 0.023296,
+      "mean_us": 1.2942222222222222
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)2, at::native::FillFunctor<long>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)",
+      "launches": 13,
+      "device_ms": 0.021983,
+      "mean_us": 1.691
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)",
+      "launches": 1,
+      "device_ms": 0.010431,
+      "mean_us": 10.431
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy_vectorized<at::native::<unnamed>::OpaqueType<(unsigned int)4>, unsigned int, (int)3, (int)128, (int)1, (int)16, (int)4>(char *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 2,
+      "device_ms": 0.00464,
+      "mean_us": 2.32
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::cos_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 1,
+      "device_ms": 0.002816,
+      "mean_us": 2.816
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::sin_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 2)]::operator ()() const::[lambda() (instance 2)]::operator ()() const::[lambda(float) (instance 1)], std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 1,
+      "device_ms": 0.002752,
+      "mean_us": 2.7520000000000002
+    },
+    {
+      "phase": "prefill",
+      "name": "void at::native::vectorized_elementwise_kernel<(int)2, at::native::CUDAFunctorOnSelf_add<long>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+      "launches": 1,
+      "device_ms": 0.001568,
+      "mean_us": 1.568
+    },
+    {
+      "phase": "unknown",
+      "name": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::Half, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)",
+      "launches": 1,
+      "device_ms": 0.011904,
+      "mean_us": 11.904
+    },
+    {
+      "phase": "unknown",
+      "name": "void at::native::<unnamed>::CatArrayBatchedCopy_alignedK_contig<at::native::<unnamed>::OpaqueType<(unsigned int)8>, unsigned int, (int)2, (int)128, (int)1, (int)16>(T1 *, at::native::<unnamed>::CatArrInputTensorMetadata<T1, T2, T4, T5>, at::native::<unnamed>::TensorSizeStride<T2, (unsigned int)4>, int, T2)",
+      "launches": 2,
+      "device_ms": 0.004992,
+      "mean_us": 2.496
+    }
+  ]
+}

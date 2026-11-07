@@ -1,0 +1,7 @@
+{
+  "files": {
+    "scripts/profile.py": "97001f82c9d2b7cb60eefafaca7dd151c479329d63ad9cf08c6f77679d9b6aed",
+    "scripts/profile_workload.py": "d87d8edb7ef0fbf2e7d5ae28210b11c94b3f832b2e454ebfc0e3dad80e500033",
+    "kernel_workbench/remote_entry.py": "fd0f2f10112497ee37cb3dea84869e90f31138ef7181616dd83096903aead6b2"
+  }
+}

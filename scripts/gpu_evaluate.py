@@ -44,10 +44,31 @@ def main():
     manifest = root / 'models/checkpoints/evaluation_models.json'
     record = {'repo': repo, 'revision': revision, 'path': str(checkpoint), 'files': hashes}
     manifest.write_text(json.dumps({'reference': record, 'candidate': record}, indent=2))
-    plan = prepare_evaluation(root / definition, manifest)
-    output = Path(plan['output'])
+    reuse = os.environ.get('KWB_REUSE_EVALUATION')
+    if reuse:
+        output = (root / reuse).resolve()
+        if not output.is_relative_to(root) or not (output / 'results/contract.json').is_file():
+            raise ValueError('Reuse evaluation must be bundled inside the runtime directory')
+        saved = json.loads((output / 'models.json').read_text())['candidate']
+        if any(saved[k] != record[k] for k in ('repo', 'revision', 'files')):
+            raise ValueError('Downloaded checkpoint differs from saved evaluation')
+        environment = json.loads((output / 'results/environment.json').read_text())
+        if environment['torch'] != torch.__version__ or environment['gpu'] != gpu.name:
+            raise ValueError('Reuse requires the same Torch version and GPU model')
+        os.environ['KWB_PROFILE_WEIGHTS'] = str(checkpoint)
+        (output / 'profiling_environment.json').write_text(json.dumps({
+            'gpu': gpu.name, 'memory_gib': gpu.total_memory / 2**30, 'torch': torch.__version__,
+            'checkpoint': record, 'validation': 'saved HF gate plus fresh full-logit hash/reset replay in profile worker'}, indent=2))
+    else:
+        plan = prepare_evaluation(root / definition, manifest)
+        output = Path(plan['output'])
     try:
-        execute_evaluation(plan, timeout=config.timeout_sec)
+        if not reuse:
+            execute_evaluation(plan, timeout=config.timeout_sec)
+        if os.environ.get('KWB_PROFILE') == '1':
+            import subprocess
+            subprocess.run([sys.executable, str(root / 'scripts/profile.py'), str(output),
+                            '--model', config.model, '--collect', os.environ.get('KWB_PROFILE_COLLECT', 'all')], cwd=root, check=True)
     finally:
         result = root.parent / (root.name + '-results.tar.gz')
         with tarfile.open(result, 'w:gz') as target:
