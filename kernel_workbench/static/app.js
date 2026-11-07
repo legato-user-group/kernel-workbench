@@ -1,22 +1,17 @@
-import { moduleLabel } from './kernel-labels.js';
 import { experimentGroups } from './experiment-groups.js?v=history-2';
 import { correctnessRows } from './correctness-table.js';
-import { kernelTree } from './kernel-tree.js';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let data, phase='all',moduleId=null,runId=null,follow=true,runRecords=[],selectedExperiment=null;
+let data, phase='all',runId=null,follow=true,runRecords=[],selectedExperiment=null;
 let experimentId=null,experimentRecords=[],experimentFingerprint='',loadSequence=0,refreshing=false;
-const kernelExpansion=new Map();
 const groups=()=>experimentGroups(runRecords,experimentRecords);
 const currentGroup=()=>groups().find(g=>g.id===selectedExperiment);
 const num=(v,d=2)=>v==null?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const time=v=>v==null?'—':v<.001?`${num(v*1e6,1)} ns`:v<1?`${num(v*1000,2)} µs`:`${num(v,3)} ms`;
-const quantity=v=>v==null?'—':v>=1e9?`${num(v/1e9)} G`:v>=1e6?`${num(v/1e6)} M`:num(v);
 async function api(path,options){const r=await fetch(path,options);if(!r.ok){let e=await r.json();throw Error(e.detail||r.statusText)}return r.json()}
 function fail(e){$('#status').textContent=e.message}
 function metric(label,value,detail,bar){return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="metric-detail">${detail}</div>${bar==null?'':`<div class="bar"><span style="width:${bar}%"></span></div>`}</div>`}
 function render(){
- $('#model-name').textContent=data.model.name;
- const t=data.timings,p=data.point;
+ const t=data.timings;
  const independent=t.source==='unprofiled';
  const samplesLabel=key=>{const count=t.sample_counts?.[key]??t.sample_count;return count==null?'':`${count}${t.expected_samples?'/'+t.expected_samples:''}회`};
  const timingLabel=independent?`프로파일러 OFF · 중앙값 ${samplesLabel('total_ms')}`:(t.source==='runner_single'?'단일 실행 · 반복 기준 측정 없음':'Nsight 수집 중 · 독립 기준 측정 없음');
@@ -28,15 +23,21 @@ function render(){
   metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,`${data.config.input_tokens} input tokens · ${samplesLabel('prefill')}${profileTime('prefill')}`,t.total_ms?t.prefill/t.total_ms*100:0)+
   metric('DECODE TOTAL',`${num(t.decode)} <small>ms</small>`,`${decodeTokens} autoregressive tokens · ${samplesLabel('decode')}${profileTime('decode')}`,t.total_ms?t.decode/t.total_ms*100:0)+
   metric('DECODE / TOKEN',`${num(decodePerToken,3)} <small>ms/token</small>`,decodeTokens>0?`Decode 전체 ÷ ${decodeTokens}토큰 · ${samplesLabel('decode')}`:'Decode 토큰 없음');
- $('#notice').textContent=runId==='example'?'화면 검증용 예제 데이터입니다. 실제 GPU 측정 결과가 아닙니다.':p?.source==='estimated'?'GPU 카운터가 불완전합니다. 전체 점은 모델 연산·논리적 텐서 트래픽 추정치이며 실제 DRAM 측정값과 다릅니다.':'';
- function node(n){return n.children?`<details class="node" ${n.id?.startsWith('layer.')?'':'open'}><summary>${esc(n.label)}</summary>${n.children.map(node).join('')}</details>`:`<div class="node"><button data-module="${esc(n.id)}" class="${moduleId===n.id?'selected':''}">◇ ${esc(n.label)}</button></div>`}
- $('#tree').innerHTML=data.model.children.map(node).join('');
- $('#tree').querySelectorAll('button').forEach(b=>b.onclick=()=>{moduleId=b.dataset.module;render()});
+ $('#notice').textContent=runId==='example'?'화면 검증용 예제 데이터입니다. 실제 GPU 측정 결과가 아닙니다.':'';
  $('#gpu-name').textContent=data.hardware.name;
- roofline();table();renderEstimates();renderExperiments();
- $('#step').innerHTML='<option value="all">모든 decode 단계</option>'+[...new Set(data.kernels.flatMap(k=>k.steps?.length?k.steps.map(s=>s.step):k.step==null?[]:[k.step]))].sort((a,b)=>a-b).map(s=>`<option value="${s}">Decode ${s}</option>`).join('');
- $('#diagnostics').textContent=JSON.stringify({config:data.config,coverage:data.coverage,profiling:data.profiling,versions:data.versions,timings:data.timings,warnings:data.warnings,hardware:data.hardware},null,2);
- $('#downloads').innerHTML=runId==='example'?'':(data.artifacts||['result.json','artifacts.tar.gz','commands.log']).map(n=>`<a href="/api/runs/${runId}/artifacts/${n}">${n} ↓</a>`).join('');
+ renderLogicalBounds();roofline();renderExperiments();
+}
+function renderLogicalBounds(){
+ const labels={compute:'Compute 제한',memory:'Memory 제한',unknown:'계산 불가'};
+ $('#logical-bounds-cards').innerHTML=['prefill','decode'].map(phase=>{
+  const cost=data.logical_bounds?.[phase],decode=phase==='decode';
+  const title=decode?'Decode':'Prefill',unit=decode?' / token':' / 회';
+  if(!cost)return `<article class="logical-bound-card"><h3>${title}</h3><p>${decode&&data.config.output_tokens===1?'Decode 토큰 없음':esc(data.phase_estimate_reasons?.[phase]||'연산 비용 모형 없음')}</p></article>`;
+  const values=decode?cost.per_token:cost;
+  return `<article class="logical-bound-card" data-logical-phase="${phase}"><div class="logical-bound-head"><h3>${title}</h3><span class="bound ${esc(cost.bound)}">${labels[cost.bound]}</span></div><div class="logical-bound-value">${time(values.lower_ms)}<small>${unit}</small></div><div class="logical-bound-details"><span>Compute 하한 <b>${time(values.compute_ms)}</b></span><span>Memory 하한 <b>${time(values.memory_ms)}</b></span><span>연산 집약도 <b>${num(cost.intensity)} FLOP/byte</b></span></div><p>${decode?`${num(cost.steps,0)}토큰 합계 하한 ${time(cost.lower_ms)}`:`입력 ${num(data.config.input_tokens,0)}토큰`}</p></article>`;
+ }).join('');
+ const projectionOnly=data.estimate_scope?.startsWith('projection GEMMs only');
+ $('#logical-bounds-scope').textContent=(projectionOnly?'Projection 연산 기준 · attention·DeltaNet·정규화·elementwise 제외. ':'모델 연산 비용 모형 기준. ')+'단계별 연산량과 논리적 텐서 이동량을 합산하고 GPU 이론 peak를 적용합니다. 하한 = max(Compute, Memory). 캐시 재사용은 생략하며 실제 실행 지연은 포함하지 않습니다.';
 }
 function roofline(){
  const labels={all:'전체 실행',prefill:'Prefill',decode:'Decode'};
@@ -73,63 +74,20 @@ function roofline(){
 }
 function setPhase(next){
  phase=next;
- document.querySelectorAll('[data-phase]').forEach(button=>button.classList.toggle('active',button.dataset.phase===phase));
  document.querySelectorAll('[data-roof-phase]').forEach(button=>button.classList.toggle('active',button.dataset.roofPhase===phase));
- roofline();table();renderEstimates();
+ roofline();
 }
 
-function table(){
- $('#bound').disabled=!data.kernels.length;$('#step').disabled=!data.kernels.length;
- if(!data.kernels.length&&data.kernel_plan?.length){implementationTable();return}
- const profile=data.profiling;
- $('#kernel-evidence').textContent=data.kernels.length?profile?`실측 GPU 커널 · ${profile.decode_steps}회 decode · 토큰당 ${num(profile.phases.decode.launches/profile.decode_steps,0)} launch · ${profile.module_count?`${profile.module_count}개 레이어·연산 범위 · NVTX + graph node로 귀속 확인`:'모듈 귀속 미확인은 unattributed'}. ${profile.bounds_samples?`하한: ${profile.bounds_groups}/${data.kernels.length}그룹에 형상별 카운터 표본 연결(레이어 간 공유) · decode 표본은 0번째 단계 · 전체 트래픽으로 환산하지 않음`:`전체 FLOPs·DRAM 카운터 미수집${profile.counter_sample?` · 별도 ${profile.counter_sample.launches}-launch 카운터 표본`:''}`}`:'실측 GPU 커널 · 수집 프로파일 기준':'커널 프로파일 미수집 · 실측 시간과 호출 수 없음';
- const q=$('#search').value.toLowerCase(),bound=$('#bound').value,step=$('#step').value,groups=new Map();
- for(let k of data.kernels){
- if(step!=='all'&&k.steps?.length){const selected=k.steps.find(s=>String(s.step)===step);if(!selected)continue;k={...k,...selected,steps:[]};if(k.bounds_source==='measured_sample'&&k.bounds_reference_step!=null&&String(k.bounds_reference_step)!==step)k={...k,bound:'unknown',compute_ms:null,memory_ms:null,lower_ms:null,bounds_reason:`선택한 단계의 카운터 미수집 · 표본은 decode ${k.bounds_reference_step} 단계`}}
- if(phase!=='all'&&k.phase!==phase||moduleId&&!matchesModule(k.module)||bound!=='all'&&k.bound!==bound||step!=='all'&&String(k.step)!==step||!`${k.name} ${moduleLabel(k,data.config)}`.toLowerCase().includes(q))continue;
- const key=JSON.stringify([k.name,k.phase,k.module,k.grid,k.block,k.bound]);if(!groups.has(key))groups.set(key,{...k,calls:[],call_count:0,duration_ms:0});const g=groups.get(key);g.calls.push(k);g.call_count+=k.calls??1;g.duration_ms+=k.duration_ms;}
- const sorted=[...groups.values()];$('#count').textContent=`${sorted.length} 커널 그룹 · 모델 구조 순서`;
- const lowerCell=(g,key)=>`<td title="${esc(g.bounds_reason||'')}" >${g[key]==null?`<span class="muted">${g.bounds_reason?.startsWith('선택한 단계')?'선택 단계 미수집':key==='compute_ms'?'FLOPs 미수집':key==='memory_ms'?'DRAM 미수집':'산출 불가'}</span>`:`${time(g[key])}<small> / ${g.bounds_source==='measured_sample'?'표본':'call'}</small>`}</td>`;
- renderKernelTree(sorted,(g,i,depth)=>`<tr class="expandable kernel-tree-leaf" tabindex="0" aria-expanded="false" aria-level="${depth+1}" data-group="${i}"><td style="padding-left:${18+depth*16}px"><b title="${esc(g.name)}">▸ ${esc(g.name.length>95?g.name.slice(0,95)+'…':g.name)}</b>${g.module==='unattributed'?`<small class="operation-hint">${esc(moduleLabel(g,data.config))}</small>`:''}</td><td>${esc(g.phase)}</td><td>${num(g.call_count,0)}</td><td>${time(g.duration_ms)}</td><td><span title="${esc(g.bounds_reason||'')}" class="bound ${g.bound}">${g.bound==='unknown'?(g.bounds_source==='measured_sample'?'미분류':'카운터 미수집'):g.bound+'-bound'}</span>${g.bound!=='unknown'&&g.bounds_source==='measured_sample'?'<small>표본 · roofline</small>':''}</td>${lowerCell(g,'compute_ms')}${lowerCell(g,'memory_ms')}${lowerCell(g,'lower_ms')}</tr>`);
- $('#rows').querySelectorAll('[data-group]').forEach(row=>{const toggle=()=>{if(row.nextElementSibling?.classList.contains('detail')){row.nextElementSibling.remove();row.setAttribute('aria-expanded','false');return}const g=sorted[+row.dataset.group];const tr=document.createElement('tr');tr.className='detail';tr.innerHTML=`<td colspan="8">시간·호출 수는 전체 타임라인 집계이며, 하한은 별도 카운터 표본 기준입니다.<pre>${esc(JSON.stringify(g.calls.map(k=>({name:k.name,module:k.module,module_source:k.module_source,step:k.step,calls:k.calls??1,duration_ms:k.duration_ms,steps:k.steps,flops:k.flops,dram_bytes:k.bytes,source:k.source,compute_ms:k.compute_ms,memory_ms:k.memory_ms,lower_ms:k.lower_ms,bounds_reason:k.bounds_reason,counter_samples:k.counter_samples,grid:k.grid,block:k.block})),null,2))}</pre></td>`;row.after(tr);row.setAttribute('aria-expanded','true')};row.onclick=toggle;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}}});
-}
-function renderKernelTree(rows,leaf){
- if(!rows.length){$('#rows').innerHTML='<tr><td colspan="8" class="empty">선택한 조건에 해당하는 커널 또는 구현 경로가 없습니다.</td></tr>';return}
- const forced=!!moduleId||!!$('#search').value.trim();
- function branch(node,depth){
-  const expansionKey=forced?`${moduleId||''}|${$('#search').value.trim()}|${node.id}`:node.id;
-  const open=kernelExpansion.get(expansionKey)??(forced||!/^layer\.\d+$/.test(node.id)||node.id==='layer.0');
-  const idLabel=node.id==='$model'?'':`<small>${esc(node.id)}</small>`;
-  let html=`<tr class="kernel-tree-branch" aria-level="${depth+1}" aria-expanded="${open}" data-tree-id="${esc(node.id)}"><td colspan="8" style="padding-left:${18+depth*16}px"><button class="kernel-branch" data-kernel-node="${esc(node.id)}" data-expansion-key="${esc(expansionKey)}" aria-expanded="${open}"><span aria-hidden="true">${open?'▾':'▸'}</span><b>${esc(node.label)}</b>${idLabel}</button></td></tr>`;
-  if(open){html+=node.children.map(child=>branch(child,depth+1)).join('');html+=node.entries.map(e=>leaf(e.row,e.index,depth+1)).join('')}
-  return html;
- }
- $('#rows').innerHTML=branch(kernelTree(rows,data.model),0);
- $('#rows').querySelectorAll('[data-kernel-node]').forEach(button=>button.onclick=()=>{kernelExpansion.set(button.dataset.expansionKey,button.getAttribute('aria-expanded')!=='true');table()});
-}
 function renderExperimentSelector(){
  const entries=groups();
  $('#experiment').innerHTML=entries.length?entries.map(g=>`<option value="${esc(g.id)}">${esc(g.id)}</option>`).join(''):'<option value="example">예제 · 화면 검증</option>';
  $('#experiment').value=selectedExperiment||'example';
 }
-function matchesModule(name){return !moduleId||name===moduleId||name.startsWith(moduleId+'.')}
-function renderEstimates(){
- const rows=data.estimates.filter(o=>(phase==='all'||o.phase===phase)&&matchesModule(o.module));
- $('#estimate-scope').textContent=data.estimate_scope||'Runner가 제공한 논리적 연산·텐서 트래픽 추정';
- $('#estimates').innerHTML='<div class="table-wrap"><table><thead><tr><th>모델 연산</th><th>단계</th><th>FLOPs (추정)</th><th>논리적 bytes (추정)</th><th>모델 하한 (추정)</th></tr></thead><tbody>'+rows.map(o=>`<tr><td>${esc(o.module)}<small>${esc(o.shape||'')}</small></td><td>${esc(o.phase)}</td><td>${quantity(Object.values(o.flops).reduce((a,b)=>a+b,0))}</td><td>${quantity(o.bytes)}</td><td>${time(o.lower_ms)}</td></tr>`).join('')+(rows.length?'':'<tr><td colspan="5" class="empty">선택한 구간·연산의 비용 추정이 없습니다.</td></tr>')+'</tbody></table></div>';
-}
-function implementationTable(){
- const q=$('#search').value.toLowerCase();
- const rows=data.kernel_plan.filter(o=>(phase==='all'||o.phase===phase)&&matchesModule(o.module)&&`${o.module} ${o.implementation}`.toLowerCase().includes(q));
- $('#kernel-evidence').textContent='구현 경로 · 소스에서 확인한 연산이며 실측 GPU 커널 목록이 아닙니다. 시간·실제 호출 수·DRAM 카운터는 프로파일 미수집입니다.';
- $('#count').textContent=`${rows.length} 구현 경로 · 실측 미수집`;
- renderKernelTree(rows,(o,i,depth)=>`<tr class="kernel-tree-leaf" aria-level="${depth+1}" data-plan-module="${esc(o.module)}"><td style="padding-left:${18+depth*16}px"><b>${esc(o.implementation)}</b><small>${esc(o.shape)}</small></td><td>${esc(o.phase)}</td><td>${o.calls==null?'미수집':num(o.calls)+' (추정)'}</td><td>—</td><td>미수집</td><td>—</td><td>—</td><td>—</td></tr>`);
-}
 async function load(id,attemptId=null){
  const sequence=++loadSequence;
  const result=await api(id==='example'?'/example.json':`/api/runs/${id}/result`);
  if(sequence!==loadSequence)return;
- data=result;runId=id;moduleId=null;experimentId=attemptId;
+ data=result;runId=id;experimentId=attemptId;
  if(id==='example')selectedExperiment='example';
  $('#analysis-body').hidden=false;$('#result-unavailable').hidden=true;
  renderExperimentSelector();render();
@@ -140,7 +98,7 @@ async function showExperiment(id,attemptId=null){
  const attempt=group?.attempts.find(a=>a.id===attemptId)||(!attemptId?group?.attempts[0]:null);
  experimentId=attempt?.id||null;
  const selected=attempt?group.runs.find(r=>r.id===attempt.candidate_run_id):group?.runs[0];
- ++loadSequence;runId=null;data=null;moduleId=null;
+ ++loadSequence;runId=null;data=null;
  $('#analysis-body').hidden=true;$('#result-unavailable').hidden=!!selected;
  $('#notice').textContent='';
  renderExperimentSelector();renderExperiments();
@@ -166,10 +124,7 @@ async function refresh(){
  }finally{refreshing=false}
 }
 $('#experiment').onchange=e=>{follow=false;showExperiment(e.target.value).catch(fail)};
-$('#clear').onclick=()=>{moduleId=null;render()};
-$('#phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.phase));
 $('#roof-phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.roofPhase));
-['search','bound','step'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',()=>{table();renderEstimates()}));
 
 function renderExperiments(){
  const group=currentGroup(),attempts=group?.attempts||[];
@@ -181,22 +136,14 @@ function renderExperiments(){
  const options=attempts.map(e=>`<option value="attempt:${esc(e.id)}" ${e.id===experimentId?'selected':''}>${esc(date(e))}</option>`)
   .concat(unlinked.map(r=>`<option value="run:${esc(r.id)}" ${r.id===runId?'selected':''}>${esc(date(r))}</option>`));
  const e=attempts.find(e=>e.id===experimentId),detail=$('#experiment-detail');
- const candidate=group?.runs.find(r=>r.id===(e?e.candidate_run_id:runId));
- const baseline=group?.runs.find(r=>r.id===e?.baseline_run_id);
- const downloadButton=(id,path,label)=>`<button type="button" data-json-path="${esc(path)}" data-json-name="${esc(id)}.json">↓ ${label}</button>`;
- const downloads=[candidate?downloadButton(candidate.id,`/api/runs/${candidate.id}/result`,'JSON'):e?downloadButton(e.id,`/api/experiments/${e.id}`,'JSON'):'',
-  baseline?downloadButton(baseline.id,`/api/runs/${baseline.id}/result`,'기준 JSON'):''].join('');
  $('#experiment-list').innerHTML=options.length?'':'<div class="empty">이 실험의 시도가 없습니다.</div>';
  const field=(label,value)=>`<div><h3>${label}</h3><p>${esc(value||'기록 없음')}</p></div>`;
  detail.hidden=!options.length;
- detail.innerHTML=options.length?`<div class="experiment-detail-head"><h3>${esc(group.id)}</h3><select id="experiment-case" aria-label="실험 시도 선택">${options.join('')}</select>${downloads}</div>${e?`<div class="experiment-fields">${field('가설',e.hypothesis)}${field('결과 해석',e.conclusion)}</div>`:''}`:'';
+ detail.innerHTML=options.length?`<div class="experiment-detail-head"><h3>${esc(group.id)}</h3><select id="experiment-case" aria-label="실험 시도 선택">${options.join('')}</select></div>${e?`<div class="experiment-fields">${field('가설',e.hypothesis)}${field('결과 해석',e.conclusion)}</div>`:''}`:'';
  if($('#experiment-case'))$('#experiment-case').onchange=event=>{
   follow=false;const [kind,id]=event.target.value.split(':');
   (kind==='attempt'?showExperiment(selectedExperiment,id):load(id)).catch(fail);
  };
- detail.querySelectorAll('[data-json-path]').forEach(button=>button.onclick=()=>{
-  const link=document.createElement('a');link.href=button.dataset.jsonPath;link.download=button.dataset.jsonName;link.click();
- });
  $('#experiment-correctness').hidden=!e;
  if(!e)return;
  $('#correctness-status').textContent=({passed:'성공',failed:'실패',not_checked:'미검증'})[e.correctness.status];

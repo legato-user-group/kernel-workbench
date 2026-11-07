@@ -1,3 +1,0 @@
-interface:
-  display_name: "Kernel Benchmark"
-  short_description: "Correct GPU kernel and inference performance measurements"

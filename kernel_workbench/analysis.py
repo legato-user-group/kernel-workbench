@@ -267,6 +267,7 @@ def display_analysis(result):
     result['hardware'] = hw
     result['estimates'] = [{**e, **bounds(e['flops'], e['bytes'], hw), 'source': 'estimated'}
                            for e in result.get('estimates', [])]
+    result['logical_bounds'] = logical_phase_bounds(result)
     phases = {e['phase'] for e in result['estimates']}
     if result.get('point') is None and phases == {'prefill', 'decode'}:
         f = sum(sum(e['flops'].values()) for e in result['estimates'])
@@ -278,6 +279,35 @@ def display_analysis(result):
                                'timing_source': result['timings'].get('source'),
                                'intensity': f/traffic, 'tflops': f/(duration/1000)/1e12}
     return result
+
+
+def logical_phase_bounds(result):
+    """Price modeled phase work independently of timings and counter specimens."""
+    phases = {}
+    for phase in ('prefill', 'decode'):
+        rows = [e for e in result.get('estimates', []) if e['phase'] == phase]
+        if not rows:
+            phases[phase] = None
+            continue
+        flops = defaultdict(float)
+        for row in rows:
+            for path, count in row['flops'].items():
+                flops[path] += count
+        traffic = sum(row['bytes'] for row in rows)
+        total = bounds(dict(flops), traffic, result['hardware'])
+        steps = max(0, result['config']['output_tokens'] - 1) if phase == 'decode' else 1
+        if not steps:
+            phases[phase] = None
+            continue
+        phases[phase] = {
+            **total, 'flops': dict(flops), 'bytes': traffic,
+            'intensity': sum(flops.values()) / traffic if traffic > 0 else None,
+            'steps': steps, 'source': 'estimated',
+            'scope': result.get('estimate_scope', 'modeled operations; logical tensor traffic'),
+            'per_token': {key: value / steps if value is not None else None
+                          for key, value in total.items() if key.endswith('_ms')},
+        }
+    return phases
 
 
 def with_phase_points(result):

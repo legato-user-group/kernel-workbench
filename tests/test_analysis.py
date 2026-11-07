@@ -24,6 +24,43 @@ def test_t4_roofline_uses_fp16_and_has_no_bf16_ceiling():
     assert bounds({'bf16_tensor': 1}, 1, hw)['bound'] == 'unknown'
 
 
+def test_logical_phase_bounds_aggregate_work_without_timings_or_samples():
+    from kernel_workbench.analysis import logical_phase_bounds
+    result = {'hardware': hardware('Tesla T4'), 'config': {'output_tokens': 3},
+              'estimates': [
+                  {'phase': 'prefill', 'flops': {'fp16_tensor': 65e9}, 'bytes': 1},
+                  {'phase': 'prefill', 'flops': {'fp16_tensor': 65e9}, 'bytes': 1},
+                  {'phase': 'decode', 'flops': {'fp16_tensor': 65e6}, 'bytes': 600e6}],
+              'kernels': [{'phase': 'decode', 'flops': {'fp32': 999e12}, 'bytes': 999e12}]}
+    phases = logical_phase_bounds(result)
+    assert phases['prefill']['compute_ms'] == pytest.approx(2)
+    assert phases['prefill']['bound'] == 'compute'
+    decode = phases['decode']
+    assert decode['bound'] == 'memory' and decode['lower_ms'] == pytest.approx(2)
+    assert decode['per_token']['lower_ms'] == pytest.approx(1)
+    assert decode['intensity'] == pytest.approx(65e6 / 600e6)
+    result['config']['output_tokens'] = 1
+    assert logical_phase_bounds(result)['decode'] is None
+    result['estimates'] = []
+    assert logical_phase_bounds(result) == {'prefill': None, 'decode': None}
+
+
+def test_qwen08b_projection_model_has_compute_prefill_and_memory_decode():
+    from pathlib import Path
+    from models.qwen3_5.analysis import supplement
+    from kernel_workbench.analysis import logical_phase_bounds
+    config = json.loads(Path('experiments/qwen35_08b_prose_1024/2026-11-07/results/model_config.json').read_text())
+    modeled = supplement({'model_config': config['text_config'], 'batch': 1,
+                          'input_tokens': 1024, 'output_tokens': 256, 'dtype': 'fp16',
+                          'quantization': None, 'runner': 'fp16_plain_cudagraph', 'mtp_enabled': False})
+    phases = logical_phase_bounds({**modeled, 'hardware': hardware('Tesla T4'),
+                                   'config': {'output_tokens': 256}})
+    assert phases['prefill']['bound'] == 'compute'
+    assert phases['prefill']['lower_ms'] == pytest.approx(15.6865195087)
+    assert phases['decode']['bound'] == 'memory'
+    assert phases['decode']['per_token']['lower_ms'] == pytest.approx(5.01843328)
+
+
 def test_launch_side_attribution(tmp_path):
     path=tmp_path/'trace.sqlite'; db=sqlite3.connect(path)
     db.executescript('''CREATE TABLE StringIds(id INTEGER,value TEXT);
