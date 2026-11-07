@@ -1,11 +1,13 @@
 import { moduleLabel } from './kernel-labels.js';
-import { runnerExperiment, inputLength, selectableResults } from './experiment-groups.js';
+import { experimentGroups } from './experiment-groups.js?v=history-2';
 import { correctnessRows } from './correctness-table.js';
 import { kernelTree } from './kernel-tree.js';
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let data, phase='all',moduleId=null,runId='example', active=null,follow=true,runRecords=[],selectedRunner='example';
+let data, phase='all',moduleId=null,runId=null,follow=true,runRecords=[],selectedExperiment=null;
+let experimentId=null,experimentRecords=[],experimentFingerprint='',loadSequence=0,refreshing=false;
 const kernelExpansion=new Map();
-const currentRunner=()=>selectedRunner;
+const groups=()=>experimentGroups(runRecords,experimentRecords);
+const currentGroup=()=>groups().find(g=>g.id===selectedExperiment);
 const num=(v,d=2)=>v==null?'—':Number(v).toLocaleString('en-US',{maximumFractionDigits:d});
 const time=v=>v==null?'—':v<.001?`${num(v*1e6,1)} ns`:v<1?`${num(v*1000,2)} µs`:`${num(v,3)} ms`;
 const quantity=v=>v==null?'—':v>=1e9?`${num(v/1e9)} G`:v>=1e6?`${num(v/1e6)} M`:num(v);
@@ -105,16 +107,10 @@ function renderKernelTree(rows,leaf){
  $('#rows').innerHTML=branch(kernelTree(rows,data.model),0);
  $('#rows').querySelectorAll('[data-kernel-node]').forEach(button=>button.onclick=()=>{kernelExpansion.set(button.dataset.expansionKey,button.getAttribute('aria-expanded')!=='true');table()});
 }
-function renderRunSelectors(){
- const family=currentRunner();
- const families=[...new Set([...runRecords].sort((a,b)=>a.config.input_tokens-b.config.input_tokens).map(r=>r.runner_id||r.config.runner))];
- $('#runner').innerHTML='<option value="example">예제 · 화면 검증</option>'+families.map(id=>`<option value="${esc(id)}">${esc(id)}</option>`).join('');
- $('#runner').value=family;
- const rows=selectableResults(runRecords,experimentRecords).filter(r=>(r.runner_id||r.config.runner)===family);
- $('#runs').innerHTML=family==='example'?'<option value="example">예제</option>':rows.map(r=>`<option value="${esc(r.id)}">${r.config.input_tokens} → ${r.config.output_tokens} tokens · ${esc(r.config.runner)}${r.data_directory?` · ${esc(r.data_directory.split('/').at(-1))}`:''}</option>`).join('');
- $('#runs').value=runId||'';
- $('#runs').hidden=rows.length<=1;
- $('#runs').disabled=!rows.length;
+function renderExperimentSelector(){
+ const entries=groups();
+ $('#experiment').innerHTML=entries.length?entries.map(g=>`<option value="${esc(g.id)}">${esc(g.id)}</option>`).join(''):'<option value="example">예제 · 화면 검증</option>';
+ $('#experiment').value=selectedExperiment||'example';
 }
 function matchesModule(name){return !moduleId||name===moduleId||name.startsWith(moduleId+'.')}
 function renderEstimates(){
@@ -129,66 +125,85 @@ function implementationTable(){
  $('#count').textContent=`${rows.length} 구현 경로 · 실측 미수집`;
  renderKernelTree(rows,(o,i,depth)=>`<tr class="kernel-tree-leaf" aria-level="${depth+1}" data-plan-module="${esc(o.module)}"><td style="padding-left:${18+depth*16}px"><b>${esc(o.implementation)}</b><small>${esc(o.shape)}</small></td><td>${esc(o.phase)}</td><td>${o.calls==null?'미수집':num(o.calls)+' (추정)'}</td><td>—</td><td>미수집</td><td>—</td><td>—</td><td>—</td></tr>`);
 }
-async function load(id){
- runId=id;moduleId=null;
- data=await api(id==='example'?'/example.json':`/api/runs/${id}/result`);
- selectedRunner=id==='example'?'example':data.runner_id||data.config.runner;
- $('#analysis-body').hidden=false;$('#result-unavailable').hidden=true;$('#export').disabled=false;
- experimentId=null;renderRunSelectors();render();
+async function load(id,attemptId=null){
+ const sequence=++loadSequence;
+ const result=await api(id==='example'?'/example.json':`/api/runs/${id}/result`);
+ if(sequence!==loadSequence)return;
+ data=result;runId=id;moduleId=null;experimentId=attemptId;
+ if(id==='example')selectedExperiment='example';
+ $('#analysis-body').hidden=false;$('#result-unavailable').hidden=true;
+ renderExperimentSelector();render();
 }
-async function showRunner(family, attemptId=null){
- if(family==='example'){await load('example');return}
- const candidates=selectableResults(runRecords,experimentRecords).filter(r=>(r.runner_id||r.config.runner)===family);
- const attempt=attemptId?experimentRecords.find(e=>e.id===attemptId):null;
- const selected=attempt?candidates.find(r=>r.id===attempt.candidate_run_id):candidates[0];
- if(selected){await load(selected.id);return}
- selectedRunner=family;runId=null;data=null;moduleId=null;experimentId=attemptId;
- $('#analysis-body').hidden=true;$('#result-unavailable').hidden=false;$('#export').disabled=true;
+async function showExperiment(id,attemptId=null){
+ selectedExperiment=id;
+ const group=currentGroup();
+ const attempt=group?.attempts.find(a=>a.id===attemptId)||(!attemptId?group?.attempts[0]:null);
+ experimentId=attempt?.id||null;
+ const selected=attempt?group.runs.find(r=>r.id===attempt.candidate_run_id):group?.runs[0];
+ ++loadSequence;runId=null;data=null;moduleId=null;
+ $('#analysis-body').hidden=true;$('#result-unavailable').hidden=!!selected;
  $('#notice').textContent='';
- $('#result-unavailable').textContent='이 runner의 실험 결과는 아직 수집되지 않았습니다. 비교 기준은 실험 기록에 명시되어 있습니다.';
- renderRunSelectors();renderExperiments();
+ renderExperimentSelector();renderExperiments();
+ if(selected){await load(selected.id,experimentId);return}
+ $('#result-unavailable').textContent='이 시도의 측정 결과는 아직 수집되지 않았습니다.';
 }
 async function refresh(){
- const [runs,experiments]=await Promise.all([api('/api/runs'),api('/api/experiments')]);
- runRecords=runs.filter(r=>r.status==='completed');experimentRecords=experiments;
- const latest=selectableResults(runRecords,experimentRecords)[0];
- if(follow&&latest&&latest.id!==runId)await load(latest.id);
- else if(runId!=='example'&&runRecords.some(r=>r.id===runId&&r.evidence_revision!==data?.evidence_revision))await load(runId);
- else if(follow&&!latest&&runRecords.length)await showRunner(runRecords[0].runner_id||runRecords[0].config.runner);
- else {renderRunSelectors();renderExperiments()}
- $('#status').textContent=latest?.cleanup_error?'세션 종료 실패: '+latest.cleanup_error:'';
+ if(refreshing)return;refreshing=true;
+ try{
+  const [runs,experiments]=await Promise.all([api('/api/runs'),api('/api/experiments')]);
+  runRecords=runs.filter(r=>r.status==='completed');experimentRecords=experiments;
+  const entries=groups(),group=currentGroup();
+  const selected=group?.attempts.find(a=>a.id===experimentId);
+  const candidate=group?.runs.find(r=>r.id===selected?.candidate_run_id);
+  if(!entries.length){if(!data||runId!=='example')await load('example');else{renderExperimentSelector();renderExperiments()}}
+  else if(!group)await showExperiment(entries[0].id);
+  else if((follow&&(group.attempts[0]?.id||null)!==experimentId)||
+          (experimentId&&!group.attempts.some(a=>a.id===experimentId)))await showExperiment(group.id);
+  else if(selected&&(candidate?.id||null)!==runId)await showExperiment(group.id,experimentId);
+  else if(runId&&runRecords.some(r=>r.id===runId&&r.evidence_revision!==data?.evidence_revision))await load(runId,experimentId);
+  else {renderExperimentSelector();renderExperiments()}
+  $('#status').textContent=runRecords.find(r=>r.id===runId)?.cleanup_error||'';
+ }finally{refreshing=false}
 }
-$('#runner').onchange=e=>{follow=false;showRunner(e.target.value).catch(fail)};
-$('#runs').onchange=e=>{follow=false;load(e.target.value).catch(fail)};$('#clear').onclick=()=>{moduleId=null;render()};
+$('#experiment').onchange=e=>{follow=false;showExperiment(e.target.value).catch(fail)};
+$('#clear').onclick=()=>{moduleId=null;render()};
 $('#phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.phase));
 $('#roof-phases').querySelectorAll('button').forEach(b=>b.onclick=()=>setPhase(b.dataset.roofPhase));
 ['search','bound','step'].forEach(id=>$('#'+id).addEventListener(id==='search'?'input':'change',()=>{table();renderEstimates()}));
-$('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=`${runId}.json`;a.click();URL.revokeObjectURL(a.href)};
-(async()=>{await load('example');await refresh();setInterval(()=>refresh().catch(fail),2000)})().catch(fail);
 
-let experimentId=null,experimentRecords=[],experimentFingerprint='';
-const experimentStatuses={completed:'완료',failed:'실패',inconclusive:'판단 보류'};
-const correctnessStatuses={passed:'통과',failed:'실패',not_checked:'미검증'};
 function renderExperiments(){
- const series=$('#experiment-series').value;
- const group=runnerExperiment(experimentRecords,currentRunner(),series);
- const filtered=group?.cases||[];
- if(!filtered.some(e=>e.id===experimentId))experimentId=filtered.find(e=>e.baseline_run_id===runId||e.candidate_run_id===runId)?.id||filtered[0]?.id||null;
- const fingerprint=JSON.stringify([experimentRecords,series,experimentId,currentRunner()]);
+ const group=currentGroup(),attempts=group?.attempts||[];
+ const linked=new Set(attempts.flatMap(a=>[a.candidate_run_id,a.baseline_run_id]));
+ const unlinked=(group?.runs||[]).filter(r=>!linked.has(r.id));
+ const fingerprint=JSON.stringify([group,experimentId,runId]);
  if(fingerprint===experimentFingerprint)return;experimentFingerprint=fingerprint;
- $('#experiment-series').innerHTML='<option value="">모든 시리즈</option>'+[...new Set(experimentRecords.map(e=>e.series))].map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
- $('#experiment-series').value=series;
- $('#experiment-list').innerHTML=group?'':'<div class="empty">선택한 runner의 최적화 실험이 없습니다.</div>';
- const e=filtered.find(e=>e.id===experimentId),detail=$('#experiment-detail');
- detail.hidden=!e;$('#experiment-correctness').hidden=!e;
+ const date=record=>record.data_directory?.split('/').slice(1).join('/')||record.title||new Date(record.created_at*1000).toLocaleDateString('sv');
+ const options=attempts.map(e=>`<option value="attempt:${esc(e.id)}" ${e.id===experimentId?'selected':''}>${esc(date(e))}</option>`)
+  .concat(unlinked.map(r=>`<option value="run:${esc(r.id)}" ${r.id===runId?'selected':''}>${esc(date(r))}</option>`));
+ const e=attempts.find(e=>e.id===experimentId),detail=$('#experiment-detail');
+ const candidate=group?.runs.find(r=>r.id===(e?e.candidate_run_id:runId));
+ const baseline=group?.runs.find(r=>r.id===e?.baseline_run_id);
+ const downloadButton=(id,path,label)=>`<button type="button" data-json-path="${esc(path)}" data-json-name="${esc(id)}.json">↓ ${label}</button>`;
+ const downloads=[candidate?downloadButton(candidate.id,`/api/runs/${candidate.id}/result`,'JSON'):e?downloadButton(e.id,`/api/experiments/${e.id}`,'JSON'):'',
+  baseline?downloadButton(baseline.id,`/api/runs/${baseline.id}/result`,'기준 JSON'):''].join('');
+ $('#experiment-list').innerHTML=options.length?'':'<div class="empty">이 실험의 시도가 없습니다.</div>';
+ const field=(label,value)=>`<div><h3>${label}</h3><p>${esc(value||'기록 없음')}</p></div>`;
+ detail.hidden=!options.length;
+ detail.innerHTML=options.length?`<div class="experiment-detail-head"><h3>${esc(group.id)}</h3><select id="experiment-case" aria-label="실험 시도 선택">${options.join('')}</select>${downloads}</div>${e?`<div class="experiment-fields">${field('가설',e.hypothesis)}${field('결과 해석',e.conclusion)}</div>`:''}`:'';
+ if($('#experiment-case'))$('#experiment-case').onchange=event=>{
+  follow=false;const [kind,id]=event.target.value.split(':');
+  (kind==='attempt'?showExperiment(selectedExperiment,id):load(id)).catch(fail);
+ };
+ detail.querySelectorAll('[data-json-path]').forEach(button=>button.onclick=()=>{
+  const link=document.createElement('a');link.href=button.dataset.jsonPath;link.download=button.dataset.jsonName;link.click();
+ });
+ $('#experiment-correctness').hidden=!e;
  if(!e)return;
  $('#correctness-status').textContent=({passed:'성공',failed:'실패',not_checked:'미검증'})[e.correctness.status];
  $('#correctness-status').dataset.status=e.correctness.status;
  const mtp=e.correctness.details.includes('int8_mtp_parallel_verify4:');
  const candidateLabel=mtp?'INT8 + MTP':(e.comparison.candidate?.config.dtype?.toUpperCase()||'평가 경로');
  $('#correctness-details').innerHTML=`<div class="table-wrap"><table><thead><tr><th>검증 항목</th><th>통과 기준</th><th>${mtp?'INT8 plain':'기준 경로'}</th><th>${esc(candidateLabel)}</th></tr></thead><tbody>`+correctnessRows(e.correctness.details).map(row=>`<tr><th scope="row">${esc(row.item)}</th><td>${esc(row.criterion)}</td><td>${esc(row.baseline)}</td><td>${esc(row.candidate)}</td></tr>`).join('')+'</tbody></table></div>';
- const field=(label,value)=>`<div><h3>${label}</h3><p>${esc(value||'기록 없음')}</p></div>`;
- detail.innerHTML=`<div class="experiment-detail-head"><h3>${esc(group.runnerId)}</h3>${filtered.length>1?`<select id="experiment-case" aria-label="최적화 시도">${filtered.map(item=>`<option value="${esc(item.id)}" ${item.id===e.id?'selected':''}>${esc(item.title)}</option>`).join('')}</select>`:''}</div><div class="experiment-fields">${field('가설',e.hypothesis)}${field('결과 해석',e.conclusion)}</div>`;
- if($('#experiment-case'))$('#experiment-case').onchange=event=>{follow=false;showRunner(currentRunner(),event.target.value).catch(fail)};
 }
-$('#experiment-series').onchange=renderExperiments;
+refresh().catch(fail);
+setInterval(()=>refresh().catch(fail),2000);

@@ -24,6 +24,7 @@ def test_raw_dashboard_needs_no_upload_and_never_writes_during_reads(evidence, m
         assert len(runs) == 7 and all(r['source'] == 'experiment_raw' for r in runs)
         experiments = client.get('/api/experiments').json()
         assert len(experiments) == 4
+        assert all(e['data_directory'] == str(evidence.relative_to(directory)) for e in experiments)
         for experiment in experiments:
             comparison = experiment['comparison']
             if experiment['id'].endswith('-1024'):
@@ -119,6 +120,7 @@ def test_unchanged_checkpoint_uses_its_own_architecture_and_needs_no_mtp_parity(
     assert not any('int8' in p['implementation'] for p in result['kernel_plan'])
     assert all('fp16_tensor' in row['flops'] for row in result['estimates'])
     attempt = raw.attempts()[0]
+    assert attempt['title'] == evidence.parent.name
     assert attempt['correctness']['status'] == 'passed'
     assert attempt['baseline_run_id'] is None and attempt['candidate_run_id'] == runs[0]['id']
     assert 'MTP 생성 token parity 미검증' not in attempt['correctness']['details']

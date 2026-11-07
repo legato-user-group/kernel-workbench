@@ -62,3 +62,14 @@ def test_source_analysis_enriches_display_without_rewriting_measurement(tmp_path
     assert client.put(path, json={**analysis, 'timings':{'total_ms':1}}).status_code == 422
     assert client.get(path).json() == analysis
     assert (tmp_path/'observed/result.json').read_bytes() == original
+
+
+def test_dashboard_assets_revalidate_cached_versions(tmp_path, monkeypatch):
+    with isolated(tmp_path, monkeypatch) as client:
+        for path in ('/', '/app.js?v=history-2', '/experiment-groups.js?v=history-2', '/style.css'):
+            response = client.get(path)
+            assert response.status_code == 200
+            assert response.headers['cache-control'] == 'no-cache'
+            cached = client.get(path, headers={'If-None-Match': response.headers['etag']})
+            assert cached.status_code == 304
+            assert cached.headers['cache-control'] == 'no-cache'

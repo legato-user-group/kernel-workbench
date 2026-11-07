@@ -91,7 +91,7 @@ def _checkpoint_attempt(source, report, length, prefix, series):
     if status != 'passed':
         conclusion += ' HF BF16 정확성 또는 출력 안정성 검증 미통과·미완료: 진단값.'
     return {'id': f'{prefix}-prose-{length}', 'series': series,
-            'title': f'Prose {length} · 원본 checkpoint · MTP 꺼짐',
+            'title': source.directory.parent.name,
             'hypothesis': '원본 checkpoint의 일반 decode 성능과 HF BF16 대비 정확성을 검증한다.',
             'changes': f'{source.contract["candidate"]}. HF BF16은 정확성 기준으로만 사용한다.',
             'code_revision': 'source_manifest.json 참조', 'environment': report['environment']['gpu'],

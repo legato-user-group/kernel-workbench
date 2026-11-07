@@ -1,25 +1,21 @@
-// A runner fixes the input workload; baseline/candidate engines belong to its experiment.
-export const runnerIdentity = measurement => measurement?.runner_id || measurement?.config?.runner;
-export const inputLength = experiment => (experiment.comparison.candidate || experiment.comparison.baseline)?.config.input_tokens;
-
-export function selectableResults(runs, experiments) {
-  const baselines = new Set(experiments.map(e => e.baseline_run_id).filter(Boolean));
-  const candidates = new Set(experiments.map(e => e.candidate_run_id).filter(Boolean));
-  return runs.filter(run => candidates.has(run.id) || !baselines.has(run.id));
-}
-
-export function runnerExperiment(records, runnerId, series = '') {
-  const cases = records.filter(e => (!series || e.series === series) &&
-    ['baseline', 'candidate'].some(role => runnerIdentity(e.comparison[role]) === runnerId))
-    .sort((a, b) => (inputLength(a) ?? Infinity) - (inputLength(b) ?? Infinity));
-  if (!cases.length) return null;
-  return {
-    runnerId, cases,
-    status: cases.some(e => e.status === 'inconclusive') ? 'inconclusive' :
-      cases.every(e => e.status === 'failed') ? 'failed' : 'completed',
-    correctness: cases.some(e => e.correctness.status === 'failed') ? 'failed' :
-      cases.every(e => e.correctness.status === 'passed') ? 'passed' : 'not_checked',
-    validatedCases: cases.filter(e => Object.keys(e.comparison.speedup).length).length,
-    created_at: Math.max(...cases.map(e => e.created_at)),
-  };
+// Folder identity stays stable when a dated attempt changes its runner or engine.
+export function experimentGroups(runs, attempts) {
+  const groups = new Map();
+  const key = record => record.data_directory?.split('/')[0] || record.series;
+  function group(id) {
+    if (!groups.has(id)) groups.set(id, {id, runs: [], attempts: []});
+    return groups.get(id);
+  }
+  for (const attempt of attempts) group(key(attempt)).attempts.push(attempt);
+  for (const run of runs) {
+    const linked = attempts.filter(a => a.candidate_run_id === run.id || a.baseline_run_id === run.id);
+    const ids = run.data_directory ? [key(run)] : linked.length ? linked.map(key) : [run.runner_id || run.config.runner];
+    for (const id of new Set(ids)) group(id).runs.push(run);
+  }
+  for (const entry of groups.values()) {
+    const newest = (a, b) => (b.data_directory || '').localeCompare(a.data_directory || '') || b.created_at - a.created_at;
+    entry.runs.sort(newest);
+    entry.attempts.sort(newest);
+  }
+  return [...groups.values()].sort((a, b) => a.id.localeCompare(b.id));
 }

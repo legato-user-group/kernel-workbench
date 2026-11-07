@@ -36,7 +36,8 @@ def _records(root, directory, revision):
         record['evidence_revision'] = revision
         result['raw_source'] = str((root / source).relative_to(directory))
         runs[payload['id']] = {'record': record, 'result': result, 'artifacts': artifacts}
-    attempts = {p['id']: {**p, 'created_at': timestamp, 'source': 'experiment_raw'} for p in attempts}
+    attempts = {p['id']: {**p, 'created_at': timestamp, 'source': 'experiment_raw',
+                           'data_directory': str(root.relative_to(directory))} for p in attempts}
     return runs, attempts
 
 

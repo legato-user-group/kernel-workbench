@@ -23,7 +23,10 @@ async def local_mutations(request: Request, call_next):
     origin = request.headers.get('origin')
     if request.method not in ('GET', 'HEAD', 'OPTIONS') and origin and origin != str(request.base_url).rstrip('/'):
         return JSONResponse({'detail': 'Cross-origin mutation rejected'}, status_code=403)
-    return await call_next(request)
+    response = await call_next(request)
+    if request.url.path in ('/', '/index.html') or request.url.path.endswith(('.js', '.css')):
+        response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 
 @app.get('/api/health')
