@@ -1,0 +1,34 @@
+{
+  "gate": {
+    "max_mean_kl": 0.005,
+    "margin_threshold": 0.5,
+    "strong_mismatches_allowed": 0,
+    "allclose_atol": 0.02,
+    "allclose_rtol": 0.02,
+    "allclose_is_diagnostic": true
+  },
+  "checks": [
+    {
+      "engine": "fp16_plain_cudagraph",
+      "input_tokens": 1024,
+      "positions": 256,
+      "prefill_kl": null,
+      "decode_mean_kl": null,
+      "decode_max_kl": null,
+      "top1_agreement": null,
+      "strong_mismatches": null,
+      "cache_position": null,
+      "expected_cache_position": 1279,
+      "logits_sha256": "<sha256>",
+      "passed": null,
+      "steps": []
+    },
+    {
+      "engine": "fp16_plain_cudagraph",
+      "input_tokens": 1024,
+      "reset_repeat": true,
+      "passed": null,
+      "bitwise_equal_to_first": null
+    }
+  ]
+}

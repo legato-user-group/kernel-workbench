@@ -9,20 +9,16 @@ const num=(v,d=2)=>v==null?'—':Number(v).toLocaleString('en-US',{maximumFracti
 const time=v=>v==null?'—':v<.001?`${num(v*1e6,1)} ns`:v<1?`${num(v*1000,2)} µs`:`${num(v,3)} ms`;
 async function api(path,options){const r=await fetch(path,options);if(!r.ok){let e=await r.json();throw Error(e.detail||r.statusText)}return r.json()}
 function fail(e){$('#status').textContent=e.message}
-function metric(label,value,detail,bar){return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="metric-detail">${detail}</div>${bar==null?'':`<div class="bar"><span style="width:${bar}%"></span></div>`}</div>`}
+function metric(label,value,bar){return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${bar==null?'':`<div class="bar"><span style="width:${bar}%"></span></div>`}</div>`}
 function render(){
  const t=data.timings;
- const independent=t.source==='unprofiled';
- const samplesLabel=key=>{const count=t.sample_counts?.[key]??t.sample_count;return count==null?'':`${count}${t.expected_samples?'/'+t.expected_samples:''}회`};
- const timingLabel=independent?`프로파일러 OFF · 중앙값 ${samplesLabel('total_ms')}`:(t.source==='runner_single'?'단일 실행 · 반복 기준 측정 없음':'Nsight 수집 중 · 독립 기준 측정 없음');
- const profileTime=key=>t.profiled?`<br>${t.profiled.source==='nsys'?'Nsight 수집':'수집 실행'}: ${time(t.profiled[key])}`:'';
  const decodeTokens=Math.max(0,data.config.output_tokens-1);
  const decodePerToken=decodeTokens>0?(t.decode_ms_per_token??t.decode/decodeTokens):null;
  $('#metrics').innerHTML=
-  metric('END-TO-END',`${num(t.total_ms)} <small>ms</small>`,`${timingLabel}${profileTime('total_ms')}`)+
-  metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,`${data.config.input_tokens} input tokens · ${samplesLabel('prefill')}${profileTime('prefill')}`,t.total_ms?t.prefill/t.total_ms*100:0)+
-  metric('DECODE TOTAL',`${num(t.decode)} <small>ms</small>`,`${decodeTokens} autoregressive tokens · ${samplesLabel('decode')}${profileTime('decode')}`,t.total_ms?t.decode/t.total_ms*100:0)+
-  metric('DECODE / TOKEN',`${num(decodePerToken,3)} <small>ms/token</small>`,decodeTokens>0?`Decode 전체 ÷ ${decodeTokens}토큰 · ${samplesLabel('decode')}`:'Decode 토큰 없음');
+  metric('END-TO-END (PREFILL + DECODE)',`${num(t.total_ms)} <small>ms</small>`)+
+  metric('PREFILL',`${num(t.prefill)} <small>ms</small>`,t.total_ms?t.prefill/t.total_ms*100:0)+
+  metric('DECODE TOTAL',`${num(t.decode)} <small>ms</small>`,t.total_ms?t.decode/t.total_ms*100:0)+
+  metric('DECODE / TOKEN',`${num(decodePerToken,3)} <small>ms/token</small>`);
  $('#notice').textContent=runId==='example'?'화면 검증용 예제 데이터입니다. 실제 GPU 측정 결과가 아닙니다.':'';
  $('#gpu-name').textContent=data.hardware.name;
  renderLogicalBounds();roofline();renderExperiments();
@@ -45,9 +41,7 @@ function roofline(){
  const hw=data.hardware, points={all:data.point,...data.phase_points};
  const keys=phase==='all'?['all','prefill','decode']:[phase];
  const visible=keys.filter(key=>points[key]?.intensity>0&&points[key]?.tflops>0);
- const sources=new Set(visible.map(key=>points[key].source));
- $('#point-source').textContent=!visible.length?'INSUFFICIENT DATA':sources.size>1?'MEASURED + ESTIMATED':sources.has('measured')?'MEASURED':'ESTIMATED · MODELED';
- $('#point-scope').innerHTML=visible.map(key=>{const p=points[key];return `<div data-point-summary="${key}"><b style="color:${colors[key]}">${labels[key]} · ${p.source==='measured'?'실측':'추정'}</b><span>${num(p.intensity)} FLOP/byte · ${num(p.tflops,5)} TFLOP/s</span><small>${time(key==='all'?data.timings.total_ms:data.timings[key])} (${data.timings.source==='unprofiled'?'독립 측정':'수집 중 측정'}) · ${p.source==='estimated'?'논리적 텐서 트래픽 추정':'DRAM 카운터'}<br>${esc(p.scope||'혼합 연산 경로 집계')}</small></div>`}).join('');
+ $('#point-scope').innerHTML=visible.map(key=>{const p=points[key];return `<div data-point-summary="${key}"><b style="color:${colors[key]}">${labels[key]}</b><span>${time(key==='all'?data.timings.total_ms:data.timings[key])} (${data.timings.source==='unprofiled'?'실측':'수집 중 측정'})</span><span>AI ${num(p.intensity)} FLOP/byte · ${num(p.tflops,5)} TFLOP/s</span><small>${p.source==='estimated'?`${data.estimate_scope?.startsWith('projection GEMMs only')?'Projection':'모델'} 연산량 기준: AI = 연산량 ÷ 논리적 트래픽, 처리량 = 연산량 ÷ 위 실행 시간.${data.estimate_scope?.startsWith('projection GEMMs only')?' Attention·DeltaNet 등 제외.':''}`:'카운터 기준: AI = 연산량 ÷ DRAM 트래픽, 처리량 = 연산량 ÷ 위 실행 시간.'}</small></div>`}).join('');
  const messages={not_executed:'출력 1토큰은 prefill에서 생성되므로 실제 decode 호출이 없습니다. 출력 토큰 수를 2 이상으로 수집하세요.',missing_data:'이 실행에는 해당 구간의 커널 또는 비용 추정 데이터가 없습니다.',missing_duration:'해당 구간의 실행 시간을 수집하지 못했습니다.',missing_counters_or_nonpositive_work:'연산량·메모리 트래픽이 부족하거나 0이어서 로그 축 위치를 표시할 수 없습니다.'};
  const missing=keys.filter(key=>key!=='all'&&!points[key]);
  $('#phase-notice').textContent=missing.map(key=>`${labels[key]}: ${messages[data.phase_point_reasons?.[key]]||data.phase_point_reasons?.[key]||messages.missing_data}`).join(' ');

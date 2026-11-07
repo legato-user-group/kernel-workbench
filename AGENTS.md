@@ -13,6 +13,7 @@
 - `scripts/`: 재사용하는 실행·요약·조회 도구.
 - `kernel_workbench/`: 원시 데이터 해석, API, 대시보드 표시.
 - 대시보드는 `experiments/`의 원시 데이터를 직접 읽는다.
+- 새 실험의 자료 형식은 `templates/experiment/FORMAT.md`를 따른다. 설정·날짜 폴더는 `scripts/new_experiment.py`로 만들고 결과는 공통 평가 도구로 수집한다.
 - 모델 weight·캐시·생성 산출물·실험결과는 Git에서 제외한다.
 - 다음 실험부터 결과·프로파일 폴더는 `.gitignore`의 기본 제외 규칙을 적용한다. 사용자가 결과 포함을 명시적으로 요청한 경우에만 추적 예외를 추가한다. 실험 설정 `config.json`은 Git에서 관리한다.
 - 데모용 예외: `experiments/qwen35_08b_prose_1024/2026-11-06/`의 원시 결과·실행 메타데이터·요약은 Git에서 관리한다.

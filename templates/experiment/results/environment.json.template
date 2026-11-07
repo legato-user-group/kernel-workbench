@@ -1,0 +1,16 @@
+{
+  "gpu": "<actual-GPU-name>",
+  "memory_gib": null,
+  "compute_capability": [
+    null,
+    null
+  ],
+  "torch": "<version>",
+  "cuda": "<version>",
+  "packages": {
+    "transformers": "<version>",
+    "triton": "<version>",
+    "safetensors": "<version>",
+    "huggingface_hub": "<version>"
+  }
+}

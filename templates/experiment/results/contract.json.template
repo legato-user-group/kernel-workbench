@@ -1,0 +1,47 @@
+{
+  "reference": "official HF BF16 cached eager; SDPA; StaticCache; cpu",
+  "candidate": "original checkpoint; fp16; MTP disabled; no quantization",
+  "candidate_dtype": "fp16",
+  "engines": [
+    "fp16_plain_cudagraph"
+  ],
+  "check_engines": [
+    "fp16_plain_cudagraph"
+  ],
+  "mtp_enabled": false,
+  "quantization": null,
+  "kernels": "torch",
+  "model_config_file": "results/model_config.json",
+  "lengths": [
+    1024
+  ],
+  "new_tokens": 256,
+  "warmup": 3,
+  "repeats": 10,
+  "hf_timing_requested": false,
+  "cache_capacity": 1344,
+  "gate": {
+    "max_mean_kl": 0.005,
+    "margin_threshold": 0.5,
+    "strong_mismatches_allowed": 0,
+    "allclose_atol": 0.02,
+    "allclose_rtol": 0.02,
+    "allclose_is_diagnostic": true
+  },
+  "teacher_forcing_positions": 256,
+  "state_comparison": "not checked; logits and cache position checked",
+  "timing": "separate unprofiled wall/CUDA Event passes; model load, cache reset and graph capture excluded",
+  "models": {
+    "reference": {
+      "repo": "<checkpoint-repo>",
+      "revision": "<checkpoint-revision>",
+      "path": "<absolute-local-checkpoint-path>"
+    },
+    "candidate": {
+      "repo": "<checkpoint-repo>",
+      "revision": "<checkpoint-revision>",
+      "path": "<absolute-local-checkpoint-path>"
+    }
+  },
+  "runner_id": "<experiment-name>"
+}

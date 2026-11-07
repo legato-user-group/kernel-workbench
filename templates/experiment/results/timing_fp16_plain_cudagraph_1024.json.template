@@ -1,0 +1,50 @@
+{
+  "engine": "fp16_plain_cudagraph",
+  "input_tokens": 1024,
+  "prefill_forward": {
+    "source": "<unprofiled-or-profile_collection>",
+    "sample_count": 1,
+    "samples": [
+      {
+        "wall_ms": null,
+        "cuda_event_ms": null
+      }
+    ]
+  },
+  "engine_ttft": {
+    "source": "<unprofiled-or-profile_collection>",
+    "sample_count": 1,
+    "samples": [
+      {
+        "wall_ms": null,
+        "cuda_event_ms": null
+      }
+    ]
+  },
+  "decode": {
+    "source": "<unprofiled-or-profile_collection>",
+    "sample_count": 1,
+    "samples": [
+      {
+        "wall_ms": null,
+        "cuda_event_ms": null,
+        "output_ids_sha256": "<sha256>",
+        "returned_output_tokens": 256,
+        "emitted_decode_tokens": 255
+      }
+    ]
+  },
+  "generation": {
+    "source": "<unprofiled-or-profile_collection>",
+    "sample_count": 1,
+    "samples": [
+      {
+        "wall_ms": null,
+        "cuda_event_ms": null,
+        "output_ids_sha256": "<sha256>",
+        "returned_output_tokens": 256,
+        "emitted_decode_tokens": 255
+      }
+    ]
+  }
+}

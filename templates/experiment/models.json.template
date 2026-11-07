@@ -1,0 +1,20 @@
+{
+  "reference": {
+    "repo": "<checkpoint-repo>",
+    "revision": "<checkpoint-revision>",
+    "path": "<absolute-local-checkpoint-path>",
+    "files": {
+      "config.json": "<sha256>",
+      "model.safetensors": "<sha256>"
+    }
+  },
+  "candidate": {
+    "repo": "<checkpoint-repo>",
+    "revision": "<checkpoint-revision>",
+    "path": "<absolute-local-checkpoint-path>",
+    "files": {
+      "config.json": "<sha256>",
+      "model.safetensors": "<sha256>"
+    }
+  }
+}

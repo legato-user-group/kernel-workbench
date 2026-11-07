@@ -1,0 +1,13 @@
+{
+  "category": "prose",
+  "repeated_source": false,
+  "chat_template": false,
+  "add_special_tokens": false,
+  "source_text": "<actual-input-text>",
+  "cases": {
+    "1024": {
+      "input_ids": [],
+      "sha256": "<sha256>"
+    }
+  }
+}
