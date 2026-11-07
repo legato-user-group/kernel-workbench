@@ -9,9 +9,10 @@ __pycache__/
 # Local model checkpoints/caches and experiment results.
 /models/checkpoints/
 /models/cache/
+
+# New experiment result directories are ignored by default.
 /experiments/*/*/
-# !/experiments/qwen35_08b_prose_1024/2026-11-06/
-!/experiments/qwen35_08b_prose_1024/2026-11-07/
+
 # Native Nsight reports stay local; the dashboard reads SQLite/CSV/JSON.
 *.nsys-rep
 *.nsys-rep.gz
